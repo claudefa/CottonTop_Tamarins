@@ -1,0 +1,30 @@
+#/bin/bash
+module load mkl
+module unload gcc
+module load gcc/6.3.0
+module load gsl/2.4
+module unload intel
+module load OPENBLAS/0.2.20
+module load admixtools
+module unload python
+module load PYTHON/2.7.6
+
+
+#eigensoft 
+vcftools --gzvcf  /scratch/devel/cfontser/CTT/VCF/Filter/CTT_CM038391.1_filter.vcf.gz --maf 0.00001 --max-missing 0.8 --minDP 3 --minGQ 20 --stdout --recode --recode-INFO-all | vcf-query -f '%CHROM\t%POS\t[%GTR\t]\n'  | python vcf_to_eigensoft.py > CTT_CM038391.1.eigensoft
+# add a fake reference all 0 Saguinus_oedipus
+
+# #snp 
+vcftools --gzvcf  /scratch/devel/cfontser/CTT/VCF/Filter/CTT_CM038391.1_filter.vcf.gz --maf 0.00001 --max-missing 0.8 --minDP 3 --minGQ 20 --stdout --recode --recode-INFO-all | awk '/^#/{next}{print "\t"$1":"$2"\t1\t0\t"$2"\t"$4"\t"$5 }' > CTT_CM038391.1.snp
+
+
+# obtain the comparisons
+awk '{print $3}' CTT_CM038391.1.ind | sort | uniq > sites
+while read i ; do while read j; do echo  $i $j "Reference";done < sites; done < sites > list_sites_qp3
+
+
+
+python3 ~/submit.py -c "module load mkl;module unload gcc;module load gcc/6.3.0;module load gsl/2.4;module unload intel;module load OPENBLAS/0.2.20;module load admixtools;module unload python;module load PYTHON/2.7.6;qp3Pop -p CTT.par > One_logfile_Sites_CTT"  -i . -e f3all.err -o f3all.out -n f3 -u 8 -w 23:00:00 
+
+
+grep 'result:' One_logfile_Sites_CTT | awk '{print $2, $3, $4, $5, $6, $7, $8, $9}' | sort | uniq > all_sites.qp3Pop.out

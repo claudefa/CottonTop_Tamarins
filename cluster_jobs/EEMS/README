@@ -1,0 +1,14 @@
+# apply eems to a set of historical cotton-top tamarins
+module load gcc/6.3.0
+module load boost/latest
+module load eems
+
+python3 ~/submit.py -c "vcftools --gzvcf  /scratch/devel/cfontser/CTT/VCF/Filter/CTT_CM038391.1_filter.vcf.gz --keep historical.txt --maf 0.05 --minDP 3 --minGQ 20 --max-missing 0.8 --stdout --recode --recode-INFO-all | bgzip -c > HistoricalCTT_CM038391.1_filter.vcf.gz ;tabix -p vcf HistoricalCTT_CM038391.1_filter.vcf.gz" -i . -e filter.err -o filter.out -n filter -u 1 -w 2:00:00
+
+plink --vcf HistoricalCTT_CM038391.1_filter.vcf.gz --recode --out HistoricalCTT --allow-extra-chr
+sed -i 's/CM038391.1/chr1/g' HistoricalCTT.map 
+plink --file HistoricalCTT --make-bed --out HistoricalCTT
+
+bed2diffs_v1 --bfile HistoricalCTT
+
+python3 ~/submit.py -i . -e eems.err -o eems.out -u 1 -w 23:00:00 -n eems -c "runeems_snps --params params-chain1.ini"
