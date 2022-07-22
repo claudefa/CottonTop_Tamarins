@@ -4,6 +4,13 @@ do
 python3 ~/submit.py -c "vcftools --gzvcf /scratch/devel/cfontser/CTT/VCF/MergeVCFs/CTT_${line}.g.vcf.gz --max-alleles 2 --max-missing 0.7 --minDP 3 --maxDP 50 --minQ 30 --remove-indels --recode --stdout --recode-INFO-all | bgzip -c > CTT_${line}_filter.vcf.gz; tabix -p vcf CTT_${line}_filter.vcf.gz"  -i. -e out/filter.err -o out/filter.out -u 2 -w 12:00:00  -n filter
 done < <(head -n 1 Chrom_autosomes)
 
+
+while read line
+do
+python3 ~/submit.py -c "bcftools filter -e'FORMAT/DP<3 && FORMAT/GQ<30 && FORMAT/DP>50' /scratch/devel/cfontser/CTT/VCF/MergeVCFs/CTT_${line}.g.vcf.gz | bcftools view -m2 -M2 -v snps -i 'F_MISSING<0.3' | bgzip -c > CTT_${line}_filter.vcf.gz; tabix -p vcf CTT_${line}_filter.vcf.gz"  -i. -e out/filter.err -o out/filter.out -u 2 -w 12:00:00  -n filter
+done < Chrom_autosomes
+
+
 vcftools --gzvcf CTT_CM038391.1_filter.vcf.gz --het --maf 0.05 --out CTT_CM038391.1
 plink --vcf CTT_CM038391.1_filter.vcf.gz --ibc --maf 0.05  --out CTT_CM038391.1 --allow-extra-chr
 plink --vcf CTT_CM038391.1_filter.vcf.gz --maf 0.05 --test-missing --out CTT_CM038391.1 --allow-extra-chr
