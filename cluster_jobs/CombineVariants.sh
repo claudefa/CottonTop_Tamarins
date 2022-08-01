@@ -29,5 +29,5 @@ do
 	chmod 755 $jobName
 	echo $jobName
 
-	python3 ~/submit.py  -i . -o ${out}/comb_${chrom}.out -e ${out}/comb_${chrom}.err -n comb_${chrom} -u 4 -t 1 -r lowprio -w 96:00:00 -c $jobName;
+	python3 ~/submit.py  -i . -o ${out}/comb_${chrom}.out -e ${out}/comb_${chrom}.err -n comb_${chrom} -u 4 -t 1 -r lowprio -w 24:00:00 -c $jobName;
 done < Chrom_autosomes

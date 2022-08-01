@@ -1,3 +1,9 @@
+# Create vcf per scaffold and sample
+./snpAD.sh
+
+# Combine variants per scaffold
+./CombineVariants.sh 
+
 # Filter VCF
 
 while read line
@@ -5,13 +11,15 @@ do
 python3 ~/submit.py -c "bcftools filter -e'FORMAT/DP<3 && FORMAT/GQ<30 && FORMAT/DP>50' /scratch/devel/cfontser/CTT/VCF/MergeVCFs/CTT_${line}.g.vcf.gz | bcftools view -m2 -M2 -v snps -i 'F_MISSING<0.3' | bgzip -c > CTT_${line}_filter.vcf.gz; tabix -p vcf CTT_${line}_filter.vcf.gz"  -i. -e out/filter.err -o out/filter.out -u 2 -w 12:00:00  -n filter
 done < Chrom_autosomes
 
+# Concatenate all scaffolds
+./concatVCFs_filter.sh
 
 # Basic stats and PCA
-vcftools --gzvcf CTT_CM038391.1_filter.vcf.gz --het --maf 0.05 --out CTT_CM038391.1
-plink --vcf CTT_CM038391.1_filter.vcf.gz --ibc --maf 0.05  --out CTT_CM038391.1 --allow-extra-chr
-plink --vcf CTT_CM038391.1_filter.vcf.gz --maf 0.05 --test-missing --out CTT_CM038391.1 --allow-extra-chr
-plink --vcf CTT_CM038391.1_filter.vcf.gz --maf 0.05 --pca --out CTT_CM038391.1 --allow-extra-chr
 
+vcftools --gzvcf CTT_filter.vcf.gz --het --maf 0.05 --out CTT_filter
+plink --vcf CTT_filter.vcf.gz --ibc --maf 0.05  --out CTT_filter --allow-extra-chr --double-id
+plink --vcf CTT_filter.vcf.gz --maf 0.05 --test-missing --out CTT_filter --allow-extra-chr --double-id
+plink --vcf CTT_filter.vcf.gz --maf 0.05 --pca --out CTT_filter --allow-extra-chr --double-id
 
 # projected PCA 
  plink --vcf CTT_CM038391.1_filter.vcf.gz --maf 0.05 --pca --out CTT_CM038391.1 --allow-extra-chr --pca-cluster-names Historical --within clusters
