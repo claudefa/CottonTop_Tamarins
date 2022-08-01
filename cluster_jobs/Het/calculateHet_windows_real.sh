@@ -4,11 +4,12 @@ bed=$1;
 sample=$2;
 if [ -z "$bed" ] || [ -z "$sample" ];then printf "### Calculate Het by windows ###\n\nUSAGE:\n\nbash calculateHet_windows.sh 100000 Sample \n\n";exit;fi
 mkdir -p Het_windows_real/${sample}/
-vcf="/scratch/devel/cfontser/CTT/VCF/MergeVCFs/CTT_CM038391.1.g.vcf.gz" 
+
 while read line;
 do 
 	region=$(echo $line | awk '{print $1":"$2"-"$3}');
 	read chrom start end <<<$(echo $line);
+	vcf="/scratch/devel/cfontser/CTT/VCF/MergeVCFs/CTT_${chrom}.g.vcf.gz"
 	callable=$(tabix -h $vcf $region | vcftools --vcf - --indv $sample --max-missing 1 --stdout --recode --recode-INFO-all --minDP 3 --maxDP 30 --minQ 30 | grep -v '#' | wc -l ) 
 	if [ $callable -gt 0 ];
 	then
