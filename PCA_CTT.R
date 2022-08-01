@@ -7,9 +7,7 @@ library("RColorBrewer")
 library("viridis")
 library("readxl")
 
-setwd("~/Documents/OneDrive - upf.edu/Doctorat/Cotton-top/")
-setwd("~/Documents/Feina/Cotton-top/")
-
+setwd("~/Documents/Feina/CottonTop_Tamarins/")
 metadata <- read_excel("Shotgun_Metadata.xlsx")
 
 # PCA with ANGSD with all samples 1st Scaffold --------
@@ -245,7 +243,7 @@ g
 dev.off()
 
 
-# PCA from snpAD + plink PROJECTED
+# PCA from snpAD + plink PROJECTED ---------------
 
 pca_plink <- read.table("Files/CTT_CM038391.1_projected.eigenvec")
 val_plink <- read.table("Files/CTT_CM038391.1_projected.eigenval")
@@ -288,7 +286,7 @@ g
 dev.off()
 
 
-# PCA from snpAD + plink
+# PCA from snpAD + plink 1st scaffold----------------
 
 pca_plink <- read.table("Files/CTT_CM038391.1.eigenvec")
 val_plink <- read.table("Files/CTT_CM038391.1.eigenval")
@@ -310,6 +308,7 @@ g <- g +   geom_point(data=pca_plink, aes(V3, V4,  color=Site, shape=Type), size
   theme(legend.position="right", legend.title = element_blank()) 
 #scale_color_manual(values=c("#f5ba18", "#451cb8") ) 
 g
+
 pdf("Plots/PCA_allsamples_allsites_VCF.pdf", height=8, width=15)
 g
 dev.off()
@@ -326,6 +325,46 @@ g <- g +   geom_point(data=pca_plink, aes(V5, V6,  color=Site, shape=Type), size
 #scale_color_manual(values=c("#f5ba18", "#451cb8") ) 
 g
 pdf("Plots/PCA_allsamples_allsites_pc3pc4_VCF.pdf", height=8, width=15)
+g
+dev.off()
+
+# PCA from snpAD + plink all autosomes ----------------
+pca_plink <- read.table("Files/CTT_filter.eigenvec")
+val_plink <- read.table("Files/CTT_filter.eigenval")
+val_plink[1,1]/sum(val_plink$V1) *100
+val_plink[2,1]/sum(val_plink$V1) *100
+val_plink[3,1]/sum(val_plink$V1) *100
+val_plink[4,1]/sum(val_plink$V1) *100
+
+pca_plink$Full_ID <- pca_plink$V1
+pca_plink <- merge(pca_plink, metadata[ , 1:12], by="Full_ID")                            
+centroids <- aggregate(cbind(V3,V4)~Site,pca_plink,mean)
+colnames(centroids) <- c("Site","V3","V4") 
+
+g <- ggplot()
+g <- g +   geom_point(data=pca_plink, aes(V3, V4,  color=Site, shape=Type), size=4) + ylab("PC2 (7.61%)") + xlab("PC1 (11.74%)") + 
+  ggtitle("PCA - Cotton-Top Tamarin 36 samples (CM038391.1 -  115,559 SNPs) - VCF") + theme_test() + 
+  geom_convexhull(data=pca_plink, aes(V3, V4,  fill=Site),alpha=.3, colour = NA)+
+  geom_text_repel(data=centroids, aes(V3, V4,  label=Site), force = 4,max.overlaps = Inf,box.padding = 1)  + 
+  theme(legend.position="right", legend.title = element_blank()) 
+#scale_color_manual(values=c("#f5ba18", "#451cb8") ) 
+g
+pdf("Plots/PCA_allsamples_allsites_VCF_allscaffolds.pdf", height=8, width=15)
+g
+dev.off()
+
+centroids <- aggregate(cbind(V5,V6)~Site,pca_plink,mean)
+colnames(centroids) <- c("Site","V5","V6") 
+
+g <- ggplot()
+g <- g +   geom_point(data=pca_plink, aes(V5, V6,  color=Site, shape=Type), size=4) + ylab("PC4 (6.28%)") + xlab("PC3 (6.54%)") + 
+  ggtitle("PCA - Cotton-Top Tamarin 36 samples (CM038391.1 -  115,559 SNPs) - VCF") + theme_test() + 
+  geom_convexhull(data=pca_plink, aes(V5, V6,  fill=Site),alpha=.3, colour = NA)+
+  geom_text_repel(data=centroids, aes(V5, V6,  label=Site), force = 4,max.overlaps = Inf,box.padding = 1)  + 
+  theme(legend.position="right", legend.title = element_blank()) 
+#scale_color_manual(values=c("#f5ba18", "#451cb8") ) 
+g
+pdf("Plots/PCA_allsamples_allsites_pc3pc4_VCF_allscaffolds.pdf", height=8, width=15)
 g
 dev.off()
 
