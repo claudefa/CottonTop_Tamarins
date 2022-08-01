@@ -45,3 +45,12 @@ bed2diffs_v1 --bfile HistoricalCTT
 
 python3 ~/submit.py -i . -e eems.err -o eems.out -u 1 -w 23:00:00 -n eems -c "runeems_snps --params params-chain1.ini"
 
+
+# Heterozygosity
+# global scaffold
+while read line; do bash calculateHet_scaffold_real.sh $line; done < Samples
+
+# windows
+./makewindows.sh
+while read line; do python3 ~/submit.py -c "bash calculateHet_windows_real.sh 100000 $line" -i . -e out/${line}_window.err -o out/${line}_window.out -n w$line -u 1 -w 6:00:00; done < Samples
+
