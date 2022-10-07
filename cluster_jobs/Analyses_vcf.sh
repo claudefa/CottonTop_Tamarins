@@ -1,15 +1,12 @@
 # Create vcf per scaffold and sample
 ./snpAD.sh
-
+./snpAD_2.sh
+./snpAD_3.sh
 # Combine variants per scaffold
 ./CombineVariants.sh 
 
 # Filter VCF
-
-while read line
-do
-python3 ~/submit.py -c "bcftools filter -e'FORMAT/DP<3 && FORMAT/GQ<30 && FORMAT/DP>50' /scratch/devel/cfontser/CTT/VCF/MergeVCFs/CTT_${line}.g.vcf.gz | bcftools view -m2 -M2 -v snps -i 'F_MISSING<0.3' | bgzip -c > CTT_${line}_filter.vcf.gz; tabix -p vcf CTT_${line}_filter.vcf.gz"  -i. -e out/filter.err -o out/filter.out -u 2 -w 12:00:00  -n filter
-done < Chrom_autosomes
+./filtervcf.sh
 
 # Concatenate all scaffolds
 ./concatVCFs_filter.sh
@@ -54,3 +51,49 @@ while read line; do bash calculateHet_scaffold_real.sh $line; done < Samples
 ./makewindows.sh
 while read line; do python3 ~/submit.py -c "bash calculateHet_windows_real.sh 100000 $line" -i . -e out/${line}_window.err -o out/${line}_window.out -n w$line -u 1 -w 6:00:00; done < Samples
 
+
+
+# New VCF
+
+/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --vcf CTT_allsamples_filter.vcf.gz --allow-extra-chr --double-id --maf 0.05 --geno 0.2 --recode --out CTT_allsamples_filter
+sed -i 's/CM038391.1/1/g' CTT_allsamples_filter.map
+sed -i 's/CM038392.1/2/g' CTT_allsamples_filter.map
+sed -i 's/CM038393.1/3/g' CTT_allsamples_filter.map
+sed -i 's/CM038394.1/4/g' CTT_allsamples_filter.map
+sed -i 's/CM038395.1/5/g' CTT_allsamples_filter.map
+sed -i 's/CM038396.1/6/g' CTT_allsamples_filter.map
+sed -i 's/CM038397.1/7/g' CTT_allsamples_filter.map
+sed -i 's/CM038399.1/8/g' CTT_allsamples_filter.map
+sed -i 's/CM038400.1/9/g' CTT_allsamples_filter.map
+sed -i 's/CM038401.1/10/g' CTT_allsamples_filter.map
+sed -i 's/CM038402.1/11/g' CTT_allsamples_filter.map
+sed -i 's/CM038403.1/12/g' CTT_allsamples_filter.map
+sed -i 's/CM038404.1/13/g' CTT_allsamples_filter.map
+sed -i 's/CM038405.1/14/g' CTT_allsamples_filter.map
+sed -i 's/CM038406.1/15/g' CTT_allsamples_filter.map
+sed -i 's/CM038407.1/16/g' CTT_allsamples_filter.map
+sed -i 's/CM038408.1/17/g' CTT_allsamples_filter.map
+sed -i 's/CM038409.1/18/g' CTT_allsamples_filter.map
+sed -i 's/CM038410.1/19/g' CTT_allsamples_filter.map
+sed -i 's/CM038411.1/20/g' CTT_allsamples_filter.map
+sed -i 's/CM038412.1/21/g' CTT_allsamples_filter.map
+sed -i 's/CM038413.1/22/g' CTT_allsamples_filter.map
+
+/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --allow-extra-chr --double-id --recode --make-bed --out CTT_allsamples_filter 
+
+# Admixture in /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter
+for i in {2..10};
+do
+	admixture --cv CTT_allsamples_filter.bed $i | tee log${i}.out
+done 
+
+grep -h CV log*.out
+
+# Het and PCA
+/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --ibc --out CTT_allsamples_filter --allow-extra-chr --double-id
+/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --test-missing --out CTT_allsamples_filter --allow-extra-chr --double-id
+/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --pca --out CTT_allsamples_filter --allow-extra-chr --double-id
+
+
+
+	

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+in="/projects/mjolnir1/people/qvw641/CottonTop/Old_VCF/"
+vcf=${in}"CTT_filter.vcf.gz"
+outdir="/projects/mjolnir1/people/qvw641/CottonTop/F3/"
+qu="/projects/mjolnir1/people/qvw641/CottonTop/F3/qu/"
+out="/projects/mjolnir1/people/qvw641/CottonTop/F3/out/"
+script="/home/qvw641/CottonTop_Tamarins/cluster_jobs/F3/"
+
+mkdir -p $outdir
+mkdir -p $qu
+mkdir -p $out
+
+module load bcftools
+jobName1=$qu/eigensoft.lst
+echo "#!/bin/bash" > $jobName1
+echo "bcftools view -i 'F_MISSING<0.2 && MAF > 0.00001'  $vcf | bcftools query -f '%CHROM\t%POS\t[%GT\t]\n' | python ${script}vcf_to_eigensoft.py > ${outdir}CTT_oldvcf.eigensoft" >> $jobName1
+chmod 755 $jobName1
+#sbatch -c 1 --mem-per-cpu 100G --time 24:00:00 -o ${out}/Eigen.log --job-name eigen -- $jobName1
+
+#manually add a 0 column at the end to account for the reference: G. midas
+
+jobName2=$qu/snp.lst
+echo '#!/bin/bash' >$jobName2
+echo "bcftools view -i 'F_MISSING<0.2 && MAF > 0.00001'  $vcf |  awk '/^#/{next}{print \"\t\"\$1\":\"\$2\"\t1\t0\t\"\$2\"\t\"\$4\"\t\"\$5 }' > ${outdir}CTT_oldvcf.snp" >> $jobName2
+chmod 755 $jobName2
+#sbatch -c 1 --mem-per-cpu 100G --time 4:00:00 -o ${out}/Snp.log --job-name snp -- $jobName2
+
+# obtain the comparisons
+#awk '{print $3}' ${outdir}CTT_oldvcf.ind | sort | uniq > ${outdir}sites
+#while read i ; do while read j; do echo  $i $j "Reference";done < sites; done < sites > list_sites_qp3
+
+module load admixtools/
+jobName3=$qu/f3_command.sh
+echo '#!/bin/bash' >$jobName3
+echo 'module load admixtools/' >> $jobName3
+echo "qp3Pop -p ${scripts}CTT_oldvcf.par > ${outdir}One_logfile_Sites_CTT_oldvcf" >> $jobName3  
+chmod 755 $jobName3
+sbatch -c 2 --mem-per-cpu 200G --time 24:00:00 -o ${out}/Parf3.log --job-name f3 -- $jobName3
+
+#grep 'result:' ${outdir}One_logfile_Sites_CTT | awk '{print $2, $3, $4, $5, $6, $7, $8, $9}' | sort | uniq > ${outdir}all_sites.qp3Pop.out

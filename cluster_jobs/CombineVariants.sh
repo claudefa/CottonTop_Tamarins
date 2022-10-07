@@ -2,10 +2,10 @@
 
 #Script to combine variants from GATK unified genotyper . 
 #Ref genome
-ref="/scratch/devel/cfontser/CTT/Assembly/SaguinusMidas_NCBI.fasta"
+ref="/projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta"
 
 #Directory
-DIR="/scratch/devel/cfontser/CTT/VCF/"
+DIR="/projects/mjolnir1/people/qvw641/CottonTop/VCF/"
 OUTDIR=$DIR"/MergeVCFs/"
 out=${OUTDIR}"out/";
 qu=${OUTDIR}"qu/";
@@ -14,20 +14,19 @@ qu=${OUTDIR}"qu/";
 mkdir -p $OUTDIR
 mkdir -p $out
 mkdir -p $qu
+module load bcftools
 
 while read chrom;
 do
 
-	VCFs=""; while read line; do VCFs="$VCFs --variant ${DIR}/$chrom/${line}_${chrom}.vcf.gz"; done  < <(cat Samples);
-
-
+	VCFs=""; while read line; do VCFs="$VCFs ${DIR}/$chrom/${line}_${chrom}.vcf.gz"; done  < <(cat Samples);
 	jobName=${qu}/CTT_${chrom}.combine.sh
-
-	echo "java -Xmx4g -Djava.io.tmpdir=${TMPDIR} -jar /apps/GATK/3.5/GenomeAnalysisTK.jar -T CombineVariants -R ${ref} \
-	$VCFs -o ${OUTDIR}/CTT_${chrom}.g.vcf.gz  -genotypeMergeOptions UNIQUIFY; tabix -p vcf ${OUTDIR}/CTT_${chrom}.g.vcf.gz " > ${jobName}
-
+	echo "#!/bin/bash" > $jobName
+	#echo "java -Xmx4g -Djava.io.tmpdir=${TMPDIR} -jar /projects/mjolnir1/apps/conda/gatk-3.6/opt/gatk-3.6/GenomeAnalysisTK.jar -T CombineVariants -R ${ref} \
+	#$VCFs -o ${OUTDIR}/CTT_${chrom}.g.vcf.gz  -genotypeMergeOptions UNIQUIFY; tabix -p vcf ${OUTDIR}/CTT_${chrom}.g.vcf.gz " >> ${jobName}
+	echo "bcftools merge --force-samples --merge all $VCFs -O z -o ${OUTDIR}/CTT_${chrom}.g.vcf.gz ;  tabix -p vcf ${OUTDIR}/CTT_${chrom}.g.vcf.gz" >> $jobName	
 	chmod 755 $jobName
 	echo $jobName
+	sbatch -c 1 --mem-per-cpu 100G --time 24:00:00 -o ${out}/Comb_${chrom}.log --job-name Comb_$chrom -- $jobName
 
-	python3 ~/submit.py  -i . -o ${out}/comb_${chrom}.out -e ${out}/comb_${chrom}.err -n comb_${chrom} -u 4 -t 1 -r lowprio -w 24:00:00 -c $jobName;
-done < Chrom_autosomes
+done < <(tail -n 21 Chrom_autosomes)

@@ -1,20 +1,3 @@
-# apply eems to a set of historical cotton-top tamarins
-module load gcc/6.3.0
-module load boost/latest
-module load eems
-
-python3 ~/submit.py -c "vcftools --gzvcf  /scratch/devel/cfontser/CTT/VCF/Filter/CTT_CM038391.1_filter.vcf.gz --keep historical.txt --maf 0.05 --minDP 3 --minGQ 20 --max-missing 0.8 --stdout --recode --recode-INFO-all | bgzip -c > HistoricalCTT_CM038391.1_filter.vcf.gz ;tabix -p vcf HistoricalCTT_CM038391.1_filter.vcf.gz" -i . -e filter.err -o filter.out -n filter -u 1 -w 2:00:00
-
-plink --vcf HistoricalCTT_CM038391.1_filter.vcf.gz --recode --out HistoricalCTT --allow-extra-chr
-sed -i 's/CM038391.1/chr1/g' HistoricalCTT.map 
-plink --file HistoricalCTT --make-bed --out HistoricalCTT
-
-bed2diffs_v1 --bfile HistoricalCTT
-
-python3 ~/submit.py -i . -e eems.err -o eems.out -u 1 -w 23:00:00 -n eems -c "runeems_snps --params params-chain1.ini"
-
-
-# In the new cluster
 /projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --vcf /projects/mjolnir1/people/vbz170/projects/CTT/Shotgun_paper/CTT_filter.vcf.gz --keep keep_historicals.txt --recode --out /projects/mjolnir1/people/qvw641/CottonTop/HistoricalCTT/EEMS/ --allow-extra-chr --double-id --maf 0.05 --geno 0.2
 sed -i 's/CM038391.1/chr1/g' /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT.map
 sed -i 's/CM038392.1/chr2/g' /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT.map
@@ -42,5 +25,17 @@ sed -i 's/CM038413.1/chr22/g' /projects/mjolnir1/people/qvw641/CottonTop/EEMS/Hi
 /projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file HistoricalCTT --make-bed --out HistoricalCTT
 bed2diffs_v1 --bfile HistoricalCTT
 module load gcc
-echo "/projects/mjolnir1/apps/bin/runeems_snps --params /home/qvw641/CottonTop_Tamarins/cluster_jobs/EEMS/params-chain1.ini" > job1.txt
-cat $job1.txt | sbatch -c 1 --mem-per-cpu 100G --time 200:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/Eigen.log --job-name EEMS1 
+echo '#!/bin/bash' > job1.txt
+echo 'module load gcc' >> job1.txt
+echo '/projects/mjolnir1/apps/bin/runeems_snps --params /home/qvw641/CottonTop_Tamarins/cluster_jobs/EEMS/params-chain1.ini' >> job1.txt
+cat job1.txt | sbatch -c 1 --mem-per-cpu 100G --time 200:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/EEMS1.log --job-name EEMS1
+
+for i in {2..10};
+do
+	echo "#!/bin/bash" > job2.txt
+	echo "module load gcc" >> job2.txt
+	echo "/projects/mjolnir1/apps/bin/runeems_snps --params /home/qvw641/CottonTop_Tamarins/cluster_jobs/EEMS/params-chain${i}.ini" >> job2.txt
+	cat job2.txt | sbatch -c 1 --mem-per-cpu 100G --time 200:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/EEMS${i}.log --job-name EEMS${i}
+done
+
+
