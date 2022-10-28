@@ -25,4 +25,4 @@ do
         echo "module load bcftools; bcftools filter -e 'FORMAT/DP<3 && FORMAT/GQ<30 && FORMAT/DP>50' ${INDIR}/CTT_${line}.g.vcf.gz | bcftools view -m2 -M2 -v snps -i 'F_MISSING<0.3' | bgzip -c > ${OUTDIR}/CTT_${line}_filter.vcf.gz; tabix -p vcf ${OUTDIR}/CTT_${line}_filter.vcf.gz" >> $jobName 
 	chmod 755 $jobName
 	sbatch -c 1 --mem-per-cpu 100G --time 12:00:00 -o ${out}/Filt_${line}.log --job-name filt$line -- $jobName	
-done < <(tail -n 21 Chrom_autosomes)
+done < Chrom_autosomes

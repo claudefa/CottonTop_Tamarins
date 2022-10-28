@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# repeat analysis
-
 # Set directories
 DIR="/projects/mjolnir1/people/qvw641/CottonTop/"
 IN=${DIR}/"BAMs/"
@@ -18,23 +16,26 @@ mkdir -p $qu
 mkdir -p $out
 
 # Reference
-ASSEMBLY="/projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta"
 
+#REF
+ASSEMBLY="/projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta"
 module load snpAD/0.3.10
 
-while read line
+while read sample
 do
-	chrom=`echo $line | awk '{print $2}'`
-	sample=`echo $line | awk '{print $1}'`
-	jobName=$qu/TXT_${chrom}_$sample.sh
+	while read chrom;
+	do
+        jobName=$qu/SnpAD_${chrom}_$sample.sh
+        bam=${IN}${sample}.SagMidas.autosome.bam
+        snpad=${OUTDIR}/${chrom}/${sample}_${chrom}.snpAD
+        vcf=${OUTDIR}/${chrom}/${sample}_${chrom}.vcf
+        mkdir -p ${OUTDIR}/${chrom}/
+        echo "#!/bin/bash" > $jobName
+        echo "module load snpAD/0.3.10" >> $jobName
+        echo "snpADCall -N 1 -e ${OUTDIR}/${chrom}/${sample}.errors.txt -p \"\`cat ${OUTDIR}/${chrom}/${sample}.priors.txt\`\" $snpad > $vcf; \
+      		bgzip $vcf; tabix -p vcf ${vcf}.gz;" >> $jobName
+        chmod 755 $jobName
+	sbatch -c 1 --mem-per-cpu 100G --time 2:00:00 -o ${out}/snpAD_f_${sample}_${chrom}.log --job-name ${chrom}_$sample -- $jobName
 
-	bam=${IN}${sample}.SagMidas.autosome.bam
-	snpad=${OUTDIR}/${chrom}/${sample}_${chrom}.snpAD
-	mkdir -p ${OUTDIR}/${chrom}/
-	echo "#!/bin/bash" > $jobName
-	echo "module load snpAD/0.3.10" >> $jobName
-	echo "snpAD -c 12 -o ${OUTDIR}/${chrom}/${sample}.priors.txt -O ${OUTDIR}/${chrom}/${sample}.errors.txt $snpad" >> $jobName 
-	chmod 755 $jobName
-	sbatch -c 1 --mem-per-cpu 100G --time 24:00:00 -o ${out}/Rep30_${chrom}_${sample}.log --job-name ${sample}_$chrom -- $jobName
-
-done <  <(head -n 1 repeatVCF3)
+done < Chrom_autosomes	
+done < Samples

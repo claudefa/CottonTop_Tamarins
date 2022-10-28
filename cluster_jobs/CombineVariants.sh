@@ -22,11 +22,9 @@ do
 	VCFs=""; while read line; do VCFs="$VCFs ${DIR}/$chrom/${line}_${chrom}.vcf.gz"; done  < <(cat Samples);
 	jobName=${qu}/CTT_${chrom}.combine.sh
 	echo "#!/bin/bash" > $jobName
-	#echo "java -Xmx4g -Djava.io.tmpdir=${TMPDIR} -jar /projects/mjolnir1/apps/conda/gatk-3.6/opt/gatk-3.6/GenomeAnalysisTK.jar -T CombineVariants -R ${ref} \
-	#$VCFs -o ${OUTDIR}/CTT_${chrom}.g.vcf.gz  -genotypeMergeOptions UNIQUIFY; tabix -p vcf ${OUTDIR}/CTT_${chrom}.g.vcf.gz " >> ${jobName}
 	echo "bcftools merge --force-samples --merge all $VCFs -O z -o ${OUTDIR}/CTT_${chrom}.g.vcf.gz ;  tabix -p vcf ${OUTDIR}/CTT_${chrom}.g.vcf.gz" >> $jobName	
 	chmod 755 $jobName
 	echo $jobName
 	sbatch -c 1 --mem-per-cpu 100G --time 24:00:00 -o ${out}/Comb_${chrom}.log --job-name Comb_$chrom -- $jobName
 
-done < <(tail -n 21 Chrom_autosomes)
+done < Chrom_autosomes
