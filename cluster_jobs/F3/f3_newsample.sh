@@ -34,8 +34,8 @@ module load admixtools/
 jobName3=$qu/f3_commandNewVCF.sh
 echo '#!/bin/bash' >$jobName3
 echo 'module load admixtools/' >> $jobName3
-echo "qp3Pop -p ${scripts}CTT_newVCF.par > ${outdir}One_logfile_Sites_CTT_newvcf" >> $jobName3  
+echo "qp3Pop -p ${scripts}CTT_newVCF.par > ${outdir}One_logfile_Sites_CTT_newvcf_repeat2" >> $jobName3  
 chmod 755 $jobName3
-sbatch -c 2 --mem-per-cpu 200G --time 24:00:00 -o ${out}/Parf3.log --job-name f3_newVCF -- $jobName3
+sbatch -c 1 --mem-per-cpu 10G --time 1:00:00 -o ${out}/Parf3.log --job-name f3_newVCF -- $jobName3
 
-#grep 'result:' ${outdir}One_logfile_Sites_CTT | awk '{print $2, $3, $4, $5, $6, $7, $8, $9}' | sort | uniq > ${outdir}all_sites.qp3Pop.out
+#grep 'result:' ${outdir}One_logfile_Sites_CTT_newvcf* | awk '{print $3, $4, $5, $6, $7, $8, $9, $10}' | sort | uniq > ${outdir}all_sites_newvcf.qp3Pop.out
