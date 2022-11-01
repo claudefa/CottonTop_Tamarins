@@ -1,14 +1,14 @@
 Input parameter values:
-               datapath = /scratch/devel/cfontser/CTT/VCF/EEMS/HistoricalCTT
-               mcmcpath = /scratch/devel/cfontser/CTT/VCF/EEMS/CTT-EEMS-nDemes1000-chain1
+               datapath = /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT
+               mcmcpath = /projects/mjolnir1/people/qvw641/CottonTop/EEMS/CTT-EEMS-nDemes1000-chain1
                prevpath = 
                gridpath = 
                distance = euclidean
                 diploid = 1
                  nIndiv = 23
-                 nSites = 14484
+                 nSites = 134214
                  nDemes = 1000
-                   seed = 1657635112
+                   seed = 1666962966
             numMCMCIter = 2000000
             numBurnIter = 1000000
             numThinIter = 9999
@@ -28,14 +28,14 @@ Input parameter values:
       mrateMuProposalS2 = 0.010000
 
 Acceptance proportions:
-	(93084/124848) = 75% for proposal type "qTileRate",		 with proposal variance "qEffctProposalS2"
-	(64859/125053) = 52% for proposal type "qTileMove",		 with proposal variance "qSeedsProposalS2"
-	(53284/125107) = 43% for proposal type "qBirthDeath"
-	(286425/374540) = 76% for proposal type "mTileRate",		 with proposal variance "mEffctProposalS2"
-	(103998/250170) = 42% for proposal type "mMeanRate",		 with proposal variance "mrateMuProposalS2"
-	(248646/375232) = 66% for proposal type "mTileMove",		 with proposal variance "mSeedsProposalS2"
-	(127055/375405) = 34% for proposal type "mBirthDeath"
-	(159436/249645) = 64% for proposal type "degrees of freedom"
+	(93879/124754) = 75% for proposal type "qTileRate",		 with proposal variance "qEffctProposalS2"
+	(65000/124029) = 52% for proposal type "qTileMove",		 with proposal variance "qSeedsProposalS2"
+	(54411/125655) = 43% for proposal type "qBirthDeath"
+	(281415/374142) = 75% for proposal type "mTileRate",		 with proposal variance "mEffctProposalS2"
+	(98907/250088) = 40% for proposal type "mMeanRate",		 with proposal variance "mrateMuProposalS2"
+	(247623/375638) = 66% for proposal type "mTileMove",		 with proposal variance "mSeedsProposalS2"
+	(126213/375871) = 34% for proposal type "mBirthDeath"
+	(143767/249823) = 58% for proposal type "degrees of freedom"
 
-Final log prior: 79.20
-Final log llike: 497.55
+Final log prior: 68.86
+Final log llike: 524.50
