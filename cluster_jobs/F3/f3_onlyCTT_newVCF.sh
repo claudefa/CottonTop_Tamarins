@@ -26,16 +26,36 @@ echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT
 chmod 755 $jobName2
 #sbatch -c 1 --mem-per-cpu 100G --time 4:00:00 -o ${out}/SnpNV.log --job-name snp -- $jobName2
 
+# BY POPULATION 
+
 # obtain the comparisons
-#awk '{print $3}' ${outdir}CTT_newvcf.ind | sort | uniq > ${outdir}sitesNV
+#awk '{print $3}' ${outdir}CTT_only_newvcf.ind | sort | uniq > ${outdir}sitesNV
 #while read i ; do while read j; do echo  $i $j "Reference";done < ${outdir}sitesNV; done < ${outdir}sitesNV > ${outdir}list_sitesNV_qp3
 
 module load admixtools/
 jobName3=$qu/f3_commandNewVCF.sh
 echo '#!/bin/bash' >$jobName3
 echo 'module load admixtools/' >> $jobName3
-echo "qp3Pop -p ${scripts}CTT_only_newVCF.par > ${outdir}One_logfile_Sites_CTT_only_newvcf2" >> $jobName3  
+echo "qp3Pop -p ${script}CTT_only_newVCF.par > ${outdir}One_logfile_Sites_CTT_only_newvcf2" >> $jobName3  
 chmod 755 $jobName3
 sbatch -c 1 --mem-per-cpu 10G --time 24:00:00 -o ${out}/Parf3_onlyCTT.log --job-name f3_onlyCTT -- $jobName3
 
 #grep 'result:' ${outdir}One_logfile_Sites_CTT_only_newvcf* | awk '{print $2, $3, $4, $5, $6, $7, $8, $9, $10}' | sort | uniq > ${outdir}all_sites_onlyCTT_final.qp3Pop.out
+
+# BY INDIVIDUAL
+# obtain the comparisons
+awk '{print $1}' ${outdir}CTT_only_newvcf.ind | sort | uniq > ${outdir}Individual
+while read i ; do while read j; do echo  $i $j "Reference";done < ${outdir}Individual; done < ${outdir}Individual > ${outdir}list_Individual_qp3
+cp CTT_only_newvcf2.eigensoft CTT_only_newvcf_indv.eigensoft
+cp CTT_only_newvcf2.ind CTT_only_newvcf_indv.ind # change third column
+cp CTT_only_newvcf2.snp CTT_only_newvcf_indv.snp
+
+module load admixtools/
+jobName3=$qu/f3_commandNewVCF_indv.sh
+echo '#!/bin/bash' >$jobName3
+echo 'module load admixtools/' >> $jobName3
+echo "qp3Pop -p ${script}CTT_only_newVCF_indv.par > ${outdir}One_logfile_Sites_CTT_only_newvcf_indv" >> $jobName3
+chmod 755 $jobName3
+sbatch -c 1 --mem-per-cpu 10G --time 24:00:00 -o ${out}/Parf3_onlyCTT_indv.log --job-name f3_onlyCTT -- $jobName3
+
+grep 'result:' ${outdir}One_logfile_Sites_CTT_only_newvcf_indv | awk '{print $2, $3, $4, $5, $6, $7, $8, $9, $10}' | sort | uniq > ${outdir}all_sites_onlyCTT_final_indv.qp3Pop.out

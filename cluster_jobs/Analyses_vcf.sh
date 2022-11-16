@@ -10,6 +10,13 @@
 # Concatenate all scaffolds
 ./concatVCFs_filter.sh
 
+# Filter VCF to keep only CTT
+jobName=/projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/out/filteronlyCTT.sh
+echo '#!/bin/bash' > $jobName
+echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_allsamples_filter.vcf.gz --keep Samples_CTTonly --maf 0.000001 --minDP 3 --maxDP 50 --minGQ 30 --recode --recode-INFO-all --stdout | bgzip -c > /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_onlyCTT_filter.vcf.gz; tabix -p vcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_onlyCTT_filter.vcf.gz" >> $jobName
+sbatch -c 1 --mem-per-cpu 2G --time 6:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/out/Filter.log  --job-name filter -- $jobName
+
+
 # VCF to plink - maf 0.05
 /projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --vcf CTT_allsamples_filter.vcf.gz --allow-extra-chr --double-id --maf 0.05 --geno 0.2 --recode --out CTT_allsamples_filter
 sed -i 's/CM038391.1/1/g' CTT_allsamples_filter.map
@@ -155,7 +162,7 @@ do
 	echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_allsamples_filter.vcf.gz --indv $line --min-alleles 2 --max-alleles 2 --recode --recode-INFO-all --stdout | grep '0/1' | awk '{print \$10}' | cut -d':' -f2,3,4,5,6 | tr '[:]' '[\t]' > /projects/mjolnir1/people/qvw641/CottonTop/VCF/AB/AB_${line}.txt" >> $jobName
 	chmod 755 $jobName
         sbatch -c 1 --mem-per-cpu 1G --time 2:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/VCF/AB/out/AB_${sample}.log --job-name ab_${sample} -- $jobName
-done < <( tail -n 27 /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples)
+done </home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples
 
 
 # Admixfrog
@@ -163,5 +170,4 @@ done < <( tail -n 27 /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples)
 
 # ROHs with BCFtools
 # remove first the geoffroyi individual
-vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_allsamples_filter.vcf.gz --keep Samples_CTTonly --maf 0.000001 --minDP 3 --maxDP 50 --minGQ 30 --recode --recode-INFO-all --stdout | bgzip -c > /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_onlyCTT_filter.vcf.gz; tabix -p vcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_onlyCTT_filter.vcf.gz
 ./Het/Roh.sh

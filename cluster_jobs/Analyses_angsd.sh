@@ -24,6 +24,15 @@ echo '#!/bin/bash' > $jobName
 echo "angsd -bam /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples_Bams_onlyCTT -ref  /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minInd 28 -skipTriallelic 1 -GL 2 -minMapQ 30 -nThreads 10 -doGlf 2 -doMajorMinor 1 -doMaf 2 -minMaf 0.05 -SNP_pval 1e-6 -rf /home/qvw641/CottonTop_Tamarins/cluster_jobs/Chrom_autosomes_angsd  -out /projects/mjolnir1/people/qvw641/CottonTop/ANGSD/CTT_only_maf" >> $jobName
 sbatch -c 1 --mem-per-cpu 50G --time 200:00:00 -o ${dir}/out/ANGSD_onlyCTT_maf.log --job-name angsdMCTT -- $jobName
 
+
+# Only CTT historical
+dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/PCA/
+jobName=$dir/out/pca_CTTonlysMaf_historical.sh
+echo '#!/bin/bash' > $jobName
+echo "angsd -bam /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples_Bams_onlyCTT_historical -ref  /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 -minInd 21 -skipTriallelic 1 -GL 2 -minMapQ 30 -nThreads 10 -doGlf 2 -doMajorMinor 1 -doMaf 2 -minMaf 0.05 -SNP_pval 1e-6 -rf /home/qvw641/CottonTop_Tamarins/cluster_jobs/Chrom_autosomes_angsd  -out /projects/mjolnir1/people/qvw641/CottonTop/ANGSD/CTT_only_maf_historical" >> $jobName
+sbatch -c 1 --mem-per-cpu 50G --time 200:00:00 -o ${dir}/out/ANGSD_onlyCTT_maf.log --job-name angsdMCTT -- $jobName
+
+
 # PCA angsd
 #Covariance matrix calculation
 conda activate /projects/mjolnir1/apps/conda/pcangsd-0.98.2
@@ -39,7 +48,13 @@ echo "angsd -bam /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples_Bams_onlyC
 sbatch -c 1 --mem-per-cpu 50G --time 200:00:00 -o ${dir}/out/ANGSD_onlyCTT_rel.log --job-name angsdRel_CTT -- $jobName
 
 zcat CTT_only_rel.mafs.gz | cut -f6 | sed 1d > CTT_rel.freq
-/apps/NGSRELATE/2.0/GCC/bin/ngsRelate  -g CTT_rel.glf.gz -n 34 -f CTT_rel.freq > CTT_rel.ml
+
+dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Inbreeding/
+jobName=$dir/out/NGSrelate_inbreeding.sh
+echo '#!/bin/bash' > $jobName
+echo "/projects/mjolnir1/apps/ngsRelate/ngsRelate -F 1  -g CTT_only_rel.glf.gz -n 34 -f CTT_rel.freq -O CTT_only_rel_inbreeding.ml" >> $jobName
+sbatch -c 1 --mem-per-cpu 2G --time 48:00:00 -o ${dir}/out/NGSrelate_onlyCTT_rel.log --job-name Rel_CTT -- $jobName
+
 
 
 # Dissimilarity matrix ngsdist
@@ -65,6 +80,30 @@ do
         echo $i
         /projects/mjolnir1/apps/conda/raxml-ng-1.1.0/bin/raxml-ng  --support --tree ${i}.main.nwk --bs-trees ${i}.boot.nwk --prefix $i
 done    
+
+# only historical and without outgroup
+dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/NgsDist/
+mkdir -p $dir
+mkdir -p ${dir}/out
+jobName=$dir/out/ngsdist_allsamples.sh
+echo '#!/bin/bash' > $jobName
+echo "/projects/mjolnir1/apps/ngsDist/ngsDist --geno /projects/mjolnir1/people/qvw641/CottonTop/ANGSD/CTT_allsamples.beagle.gz  --n_ind 35 --n_sites 8702059 --probs TRUE --out ${dir}/Distance_allsamples.txt --n_boot_rep 3 --boot_block_size 1 --n_threads 5 --labels /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples" >> $jobName
+sbatch -c 1 --mem-per-cpu 10G --time 200:00:00 -o ${dir}/out/NgsDist.log --job-name ngsdistCTT -- $jobName
+
+for i in all;
+do
+        echo $i
+        /projects/mjolnir1/apps/conda/fastme-2.1.6.1/bin/fastme -T 20 -i Distance_${i}.txt -s -D 3 -o ${i}.nwk
+        head -n 1 ${i}.nwk > ${i}.main.nwk
+        tail -n +2 ${i}.nwk | awk 'NF' > ${i}.boot.nwk
+done
+
+for i in all;
+do
+        echo $i
+        /projects/mjolnir1/apps/conda/raxml-ng-1.1.0/bin/raxml-ng  --support --tree ${i}.main.nwk --bs-trees ${i}.boot.nwk --prefix $i
+
+
 
 #Fst 
 ## per site

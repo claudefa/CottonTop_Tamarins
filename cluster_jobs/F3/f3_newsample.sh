@@ -34,8 +34,27 @@ module load admixtools/
 jobName3=$qu/f3_commandNewVCF.sh
 echo '#!/bin/bash' >$jobName3
 echo 'module load admixtools/' >> $jobName3
-echo "qp3Pop -p ${scripts}CTT_newVCF.par > ${outdir}One_logfile_Sites_CTT_newvcf_repeat2" >> $jobName3  
+echo "qp3Pop -p ${scripts}CTT_newVCF.par > ${outdir}One_logfile_Sites_CTT_newvcf" >> $jobName3  
 chmod 755 $jobName3
 sbatch -c 1 --mem-per-cpu 10G --time 1:00:00 -o ${out}/Parf3.log --job-name f3_newVCF -- $jobName3
 
 #grep 'result:' ${outdir}One_logfile_Sites_CTT_newvcf* | awk '{print $3, $4, $5, $6, $7, $8, $9, $10}' | sort | uniq > ${outdir}all_sites_newvcf.qp3Pop.out
+
+
+# BY INDIVIDUAL
+# obtain the comparisons
+awk '{print $1}' ${outdir}CTT_only_newvcf.ind | sort | uniq > ${outdir}Individual
+while read i ; do while read j; do echo  $i $j "Reference";done < ${outdir}Individual; done < ${outdir}Individual_all > ${outdir}list_Individual_all_qp3
+cp CTT_newvcf.eigensoft CTT_newvcf_indv.eigensoft
+cp CTT_newvcf.ind CTT_newvcf_indv.ind # change third column
+cp CTT_newvcf.snp CTT_newvcf_indv.snp
+
+module load admixtools/
+jobName3=$qu/f3_commandNewVCF_all_indv.sh
+echo '#!/bin/bash' >$jobName3
+echo 'module load admixtools/' >> $jobName3
+echo "qp3Pop -p ${script}CTT_newVCF_indv.par > ${outdir}One_logfile_Sites_CTT_all_newvcf_indv_repeat4" >> $jobName3
+chmod 755 $jobName3
+sbatch -c 1 --mem-per-cpu 10G --time 4:30:00 -o ${out}/Parf3_CTT_indv.log --job-name f3_CTT_indv -- $jobName3
+
+grep 'result:' One_logfile_Sites_CTT_all_newvcf_indv* | awk '{print  $3, $4, $5, $6, $7, $8, $9, $10}' | sort | uniq > allIndv.qp3Pop.out
