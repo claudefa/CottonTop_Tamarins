@@ -24,7 +24,11 @@ g <- g + geom_tile() +   scale_fill_gradientn(colours = colorRampPalette(c(brewe
   theme(axis.text.x = element_text(angle=90, hjust=1))
 g
 
-x <- spread(gen_dist_all3, Samples2, Dissimilarity, fill=NA,convert = FALSE)
+# remove CEI_060
+gen_dist_all3_no <- gen_dist_all3[gen_dist_all3$Samples!= "CEI_060"& gen_dist_all3$Samples2!= "CEI_060",]
+
+
+x <- spread(gen_dist_all3_no, Samples2, Dissimilarity, fill=NA,convert = FALSE)
 names <- x$Samples
 x <- x[,2:ncol(x)]
 rownames(x) <- names
@@ -32,9 +36,16 @@ y <- data.matrix(x)
 y
 
 clustering <- hclust(as.dist(y))
-pdf("Plots/Dendogram.pdf", width = 10, height = 8)
+
+pdf("Plots/Dendogram_noCEI_060.pdf", width = 10, height = 8)
 plot(clustering)
 dev.off()
+
+library(ape)
+class(clustering) # must be hclust class
+my_tree <- as.phylo(clustering) 
+write.tree(phy=my_tree, file="Dendogram.newick") # look for the file in your working directory
+
 
 
 pdf("Plots/Dissimilarity.pdf", height=8, width = 10 )
