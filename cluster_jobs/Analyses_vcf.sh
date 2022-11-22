@@ -173,4 +173,5 @@ done </home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples
 ./Rohan/rohan.sh
 
 # Genetic Load
+vcftools --gzvcf CTT_oedipusSamples.ann.vcf.gz --keep Samples_5x --max-missing 1 --maf 0.0000001 --stdout --recode --recode-INFO-all | bgzip -c > CTT_5x.ann.vcf.gz;
 ./counts_load.sh
