@@ -165,9 +165,12 @@ do
 done </home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples
 
 
-# Admixfrog
-./Admixfrog/admixfrog.sh
-
 # ROHs with BCFtools
 # remove first the geoffroyi individual
 ./Het/Roh.sh
+
+# ROHs with RoHan
+./Rohan/rohan.sh
+
+# Genetic Load
+./counts_load.sh
