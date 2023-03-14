@@ -1,6 +1,5 @@
 #!/bin/bash
 
-#Script to combine variants from GATK unified genotyper . 
 #Ref genome
 ref="/projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta"
 
