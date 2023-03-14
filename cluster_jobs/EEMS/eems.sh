@@ -1,7 +1,7 @@
 # EEMS with only historical samples with known coordinates
 jobname=/projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/Filter_eemsvcf.sh
 echo '#!/bin/bash' > $jobname
-echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_onlyCTT_filter.vcf.gz --keep keep_historicals.txt --maf 0.05 --minDP 3 --maxDP 50 --minGQ 30 --max-missing 0.8 --recode --recode-INFO-all --stdout | bgzip -c > /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT.vcf.gz; tabix -p vcf  /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT.vcf.gz" >> $jobname
+echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/CTT_onlyCTT_filter.vcf.gz --keep keep_historicals.txt --maf 0.05 --minDP 5 --maxDP 50 --minGQ 30 --max-missing 0.8 --recode --recode-INFO-all --stdout | bgzip -c > /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT.vcf.gz; tabix -p vcf  /projects/mjolnir1/people/qvw641/CottonTop/EEMS/HistoricalCTT.vcf.gz" >> $jobname
 cat $jobname | sbatch -c 1 --mem-per-cpu 2G --time 4:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/Filtervcf.log --job-name Filtervcf.eems
 
 
@@ -40,10 +40,10 @@ cat job1.txt | sbatch -c 1 --mem-per-cpu 20G --time 200:00:00 -o /projects/mjoln
 
 for i in {2..10};
 do
-	echo "#!/bin/bash" > job2.txt
+	echo '#!/bin/bash' > job2.txt
 	echo "module load gcc" >> job2.txt
 	echo "/projects/mjolnir1/apps/bin/runeems_snps --params /home/qvw641/CottonTop_Tamarins/cluster_jobs/EEMS/params-chain${i}.ini" >> job2.txt
-	cat job2.txt | sbatch -c 1 --mem-per-cpu 100G --time 200:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/EEMS${i}.log --job-name EEMS${i}
+	cat job2.txt | sbatch -c 1 --mem-per-cpu 100G --time 48:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/EEMS${i}.log --job-name EEMS${i}
 done
 
 
@@ -86,7 +86,3 @@ echo '#!/bin/bash' > job_nomaf_1.txt
 echo 'module load gcc' >> job_nomaf_1.txt
 echo '/projects/mjolnir1/apps/bin/runeems_snps --params /home/qvw641/CottonTop_Tamarins/cluster_jobs/EEMS/params-chain1_nomaf.ini' >> job_nomaf_1.txt
 cat job_nomaf_1.txt | sbatch -c 1 --mem-per-cpu 20G --time 200:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/EEMS/out/EEMS1_nomaf.log --job-name EEMS1
-
-
-
-
