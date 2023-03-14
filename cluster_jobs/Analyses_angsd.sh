@@ -117,3 +117,6 @@ do
 	chmod +x $jobName
 	sbatch -c 1 --mem-per-cpu 600G --time 24:00:00 -o ${dir}/out/N2HetSFS_${name}.log --job-name sfs_${name} -- $jobName
 done <  Samples_Bams_onlyCTT
+
+# Fst
+# see FST/fst.sh

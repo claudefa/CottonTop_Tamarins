@@ -99,26 +99,15 @@ jobName=/projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/admixture/out/admi
 echo '#!/bin/bash' > $jobName
 for j in {1..10};
 do
-for i in {1..8};
+for i in {9..10};
 do
         echo "module load admixture; cd /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/admixture/Rep${j}/; \
 	admixture -s $j --cv /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/admixture/Rep${j}/CTT_onlyCTT_filter.bed $i | tee /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/admixture/Rep${j}/log_onlyCTT_${j}_${i}.out" >> $jobName
 done
 done
 chmod +x $jobName
-sbatch -c 1 --mem-per-cpu 2G --time 6:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/admixture/out/Adm_onlyCTT_%A_%a.log --array=1-80%10 --job-name admix -- $jobName
+sbatch -c 1 --mem-per-cpu 2G --time 6:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/VCF/Filter/admixture/out/Adm_onlyCTT_%A_%a.log --array=1-20%10 --job-name admix -- $jobName
 
-
-# Het and PCA
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --ibc --out CTT_allsamples_filter --allow-extra-chr --double-id
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --missing --out CTT_allsamples_filter --allow-extra-chr --double-id
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --pca --out CTT_allsamples_filter --allow-extra-chr --double-id
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --het --out CTT_allsamples_filter --allow-extra-chr --double-id
-
-
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter_singletons --ibc --out CTT_allsamples_filter_singletons --allow-extra-chr --double-id
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter_singletons --test-missing --out CTT_allsamples_filter_singletons --allow-extra-chr --double-id
-/projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter_singletons --pca --out CTT_allsamples_filter_singletons --allow-extra-chr --double-id
 
 # Basic stats and PCA only CTT
 /projects/mjolnir1/apps/conda/plink-1.90b6.21/bin/plink --file CTT_allsamples_filter --keep /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples_CTTonly  --ibc --geno 0.2 --maf 0.05  --out CTT_filter_onlyCTT --allow-extra-chr --double-id
@@ -130,28 +119,8 @@ sbatch -c 1 --mem-per-cpu 2G --time 6:00:00 -o /projects/mjolnir1/people/qvw641/
 # apply eems to a set of historical cotton-top tamarins
 EEMS/eems.sh
 
-# F3 only CTT and with S.geoffroyi 
-F3/f3_newsample.sh # with S. geoffroyi
-F3/f3_onlyCTT.sh # only CTT
-
-
-# Heterozygosity for all samples
-# global scaffold
-while read line; do sample=$(echo $line | awk '{print $1}'); id=$(echo $line | awk '{print $2}'); bash Het/calculateHet_scaffold_real.sh $sample $id; done < <(tail -n 15 Het/Samples)
-while read line; do sample=$(echo $line | awk '{print $1}'); cat $sample/*het > ${sample}_total.het ; done < /home/qvw641/CottonTop_Tamarins/cluster_jobs/Het/Samples
-# windows
-Het/makewindows.sh
-while read line; 
-do  
-	sample=$(echo $line | awk '{print $1}')
-	id=$(echo $line | awk '{print $2}')
-	jobName=/projects/mjolnir1/people/qvw641/CottonTop/VCF/Het/out/${sample}.window.sh
-	echo '#!/bin/bash' >$jobName
-	echo "bash Het/calculateHet_windows_real.sh 100000 $line" >> $jobName
-	chmod 755 $jobName
-	sbatch -c 1 --mem-per-cpu 1G --time 48:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/VCF/Het/out/WindHet_${sample}.log --job-name w_${sample}_$chrom -- $jobName
-done < Het/Samples
-
+# F3  
+F3/f3_onlyCTT.sh 
 
 # Allele imbalance
 while read line; 
@@ -165,13 +134,11 @@ do
 done </home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples
 
 
-# ROHs with BCFtools
-# remove first the geoffroyi individual
-./Het/Roh.sh
-
 # ROHs with RoHan
-./Rohan/rohan.sh
+./rohan.sh
 
 # Genetic Load
+java -Xmx8g -jar /projects/mjolnir1/apps/snpeff-5.1d/snpEff.jar -c snpEff.config -v SaguinusMidas_NCBI rename.vcf.gz > CTT_allsamples.ann.vcf
+vcftools --vcf CTT_allsamples.ann.vcf --keep samples.list --maf 0.0001 --recode --recode-INFO-all --stdout | bgzip -c > CTT_oedipusSamples.ann.vcf.gz
 vcftools --gzvcf CTT_oedipusSamples.ann.vcf.gz --keep Samples_5x --max-missing 1 --maf 0.0000001 --stdout --recode --recode-INFO-all | bgzip -c > CTT_5x.ann.vcf.gz;
-./counts_load.sh
+./GeneticLoad/counts_load_dp5.sh
