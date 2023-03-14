@@ -69,19 +69,23 @@ map <-readOGR("Files/ne_50m_admin_0_countries/","ne_50m_admin_0_countries")
   
 # F3--------------
 #F3
-f3dat_sites <- read.table("Files/all_sites_onlyCTT_final.qp3Pop.out",
+f3dat_sites<- read.table("Files/all_sites_onlyCTT_final.qp3Pop.out",
                             col.names=c("PopA", "PopB", "Outgroup", "F3", "StdErr", "Z", "SNPs"))
 f3dat_sites$low <- f3dat_sites$F3 - f3dat_sites$StdErr
 f3dat_sites$high <- f3dat_sites$F3 + f3dat_sites$StdErr
 
 # only ones with coordinates
-order <- c("Tulenapa_Modern", "Mutata_Historical", "Turbo_Historical",
-           "Tierralta_Historical",
-           "PlanetaRica_Historical",
-           "Caracas_Historical", 
-           "Coloso_Historical",
-           "SanJuan_Historical",
-           "SanJuan_Modern","Ceibal_Modern")
+
+f3dat_sites$PopA <- gsub("Mutata_Historical","Mutatá_Historical",f3dat_sites$PopA)
+f3dat_sites$PopA <- gsub("Coloso_Historical","Colosó_Historical",f3dat_sites$PopA)
+f3dat_sites$PopB <- gsub("Mutata_Historical","Mutatá_Historical",f3dat_sites$PopB)
+f3dat_sites$PopB <- gsub("Coloso_Historical","Colosó_Historical",f3dat_sites$PopB)
+
+order <- c("Tulenapa_Modern", "Mutatá_Historical", "Turbo_Historical",
+           "Tierralta_Historical", "PlanetaRica_Historical",
+           "Caracas_Historical", "Colosó_Historical",
+           "SanJuan_Historical","SanJuan_Modern","Ceibal_Modern")
+
 f3dat_sites_onlyGPS <- f3dat_sites[which(f3dat_sites$PopA%in%order& f3dat_sites$PopB%in%order),]
 
 f3dat_sites_onlyGPS$PopA <- factor(f3dat_sites_onlyGPS$PopA, levels=order, ordered=TRUE)
@@ -92,7 +96,6 @@ colnames(f3dat_sites_final) <- c("PopA","PopB","F3")
 
 f3<- ggplot(f3dat_sites_final, aes(PopA, PopB, fill=F3))
 f3 <- f3 + geom_tile() +   scale_fill_viridis_c()+
-  #scale_fill_gradientn(colours = colorRampPalette(c(brewer.pal( 11, "RdYlBu")))(200)) +   
   ylab("") + xlab("")+ ggtitle("f3(S.midas;PopA,PopB)")+ theme_classic()+
   theme(axis.text.x = element_text(angle=45, hjust=1), axis.line = element_blank())
 f3
@@ -118,7 +121,6 @@ k <- k +  geom_polygon(data = map, aes(x = long,y = lat, group = group),fill = "
 
 area.all$species <- area.all$group
 colors_habitat=rep(c("#f2cc9b"),  times=c(15))
-
 
 coordinates <- read_excel("coordinates.xlsx")
 coordinates$PopB <- coordinates$Site
