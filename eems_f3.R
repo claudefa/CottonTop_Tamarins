@@ -1,25 +1,19 @@
 # EEMS and F3
 library(reemsplots2)
-library(rgdal)
 library(rworldmap)
 library(rworldxtra)
 library(RColorBrewer)
 library(ggplot2)
 library(tidyr)
 library(corrplot)
-
 library('maps')
 library('mapdata')
 library('maptools')
-library("ggplot2")
 library("readxl")
 library("rgdal") 
 library(svglite)
-library("tidyr")
-library("ggConvexHull")
 library("scales")
 library("ggrepel")
-library("RColorBrewer")
 library("viridis")
 library("ggpubr")
 library("cowplot")
@@ -103,7 +97,6 @@ f3 <- f3 + geom_tile() +   scale_fill_viridis_c()+
   theme(axis.text.x = element_text(angle=45, hjust=1), axis.line = element_blank())
 f3
 
-
 # Map per population only CTT all with coordinates-----
 # Construct Map
 map <-readOGR("Files/ne_50m_admin_0_countries/","ne_50m_admin_0_countries")
@@ -122,8 +115,6 @@ k <- k +  geom_polygon(data = map, aes(x = long,y = lat, group = group),fill = "
   geom_path(data = map,aes(x = long,y = lat,group = group),colour = "grey50",size=0.4) + 
   labs(x = "Longitude", y = "Latitude") + coord_fixed(xlim = c(-78, -74), ylim = c(7, 11), ratio=1) + 
   theme(panel.background = element_rect(fill = '#e3f0ff'),panel.grid.major = element_blank(),panel.grid.minor = element_blank())
-
-k
 
 area.all$species <- area.all$group
 colors_habitat=rep(c("#f2cc9b"),  times=c(15))
