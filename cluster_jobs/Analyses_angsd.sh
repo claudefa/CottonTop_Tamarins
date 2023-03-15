@@ -98,7 +98,7 @@ do
 	echo  "angsd  -b ${dir}${name}.tmp -ref /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta \
        		-rf /home/qvw641/CottonTop_Tamarins/cluster_jobs/Chrom_autosomes_angsd \
 		-anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}${name} \
-                -noTrans 1 -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
+                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -C 50 -baq 1 \
                 -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1 \
                 -GL 1 -doSaf 1" >> $jobName
 	chmod +x $jobName
