@@ -18,8 +18,7 @@ for (i in 1:length(samples)){
   df_list[[i]] <- cbind.data.frame(Sample=samples[i], 
                                    new1=sapply(strsplit(df1$V2, "[ ,]+"), function(i) sum(as.numeric(i)))/df1$V1,
                                    new2=sapply(strsplit(df1$V3, "[ ,]+"), function(i) sum(as.numeric(i)))/df1$V1,
-                              
-                                        new3=sapply(strsplit(df1$V4, "[ ,]+"), function(i) sum(as.numeric(i)))/df1$V1,
+                                   new3=sapply(strsplit(df1$V4, "[ ,]+"), function(i) sum(as.numeric(i)))/df1$V1,
                                    new4=sapply(strsplit(df1$V5, "[ ,]+"), function(i) sum(as.numeric(i)))/df1$V1
                                  )
 }
@@ -42,8 +41,7 @@ df2$AB<- as.numeric(unlist(lapply(1:length(df2$final), function(i)
 
 
 #write.csv2(df2,file = "Files/AB.csv", quote = FALSE, row.names = TRUE)
-
-#df3 <- read.csv2(file = "Files/AB.csv")
+#df2 <- read.csv2(file = "Files/AB.csv", sep=";")
 
 
 df2_final <- cbind.data.frame(df2$Sample, df2$AB)

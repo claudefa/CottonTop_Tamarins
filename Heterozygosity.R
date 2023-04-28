@@ -16,19 +16,40 @@ colors = c("#645244","#832232","grey","#70a37f","#b3dec1","#fbefa6","#fab2ea","#
            "#508991","#0a4a33", "#eb9486","grey")
 
 # F INBREEDING NGSRELATE -----
-
+## whole dataset
 g <- ggplot(metadata, aes(Site, `Fi (NGSrelate)`, fill=Site))
-g <- g+ geom_boxplot() + geom_jitter()+  facet_grid(.~Type, space="free", scales="free_x") + 
+g <- g+ geom_boxplot() + geom_jitter(height = 0)+  facet_grid(.~Type, space="free", scales="free_x") + 
   theme_classic() + ylab("Inbreeding (Fi)")+ scale_fill_manual(values=colors)+
-  theme(legend.position = "none")
+  theme(legend.position = "none")+ xlab("")+
+  ggtitle("Inbreeding (Fi) - All Dataset")
+  
 g
 
 pdf("Plots/Inbreeding_F_ngsrelate.pdf", height=4, width=11)
 g
 dev.off()
 
+
+## downsampled to 5x dataset
+colors2 = c("#645244","#832232","grey","#70a37f","#b3dec1","#fbefa6","#6d466b",
+            "#508991","#0a4a33","grey")
+g1 <- ggplot(metadata[metadata$Coverage>5,], aes(Site, `Fi (NGSrelate) (Downsampled to 5x)`, fill=Site))
+g1 <- g1+ geom_boxplot() + geom_jitter(height = 0)+  facet_grid(.~Type, space="free", scales="free_x") + 
+  theme_classic() + ylab("Inbreeding (Fi)")+ scale_fill_manual(values=colors2) +
+  ggtitle("Inbreeding (Fi) - Downsampling to 5x")+ xlab("")+
+  theme(legend.position = "none")
+g1
+
+pdf("Plots/Inbreeding_F_ngsrelate_5x.pdf", height=4, width=11)
+g1
+dev.off()
+
+ggarrange(g, g1, labels = c("A", "B"), ncol=1)
+ggsave("Plots/Inbreeding_F_all.pdf", height = 8, width = 11) 
+
+
 # HETEROZYGOSITY from ANGSD -----
-fins <- list.files("Files/Het/angsd/",pattern=".ml",full.names=TRUE)
+fins <- list.files("Files/Het/angsd_trans_win/",pattern=".ml",full.names=TRUE)
 samples <- sub('\\.ml$', '', basename(fins))
 
 fold <- 0 # Folded caculation, since we use the same ref and anc.
@@ -39,22 +60,22 @@ df_list <- lapply(fins,
 df_list2 <- list()
 for (i in 1:length(samples)){
   
-  df_list2[[i]] <- cbind.data.frame(Sample=samples[i], het=df_list[[i]][2]/sum(df_list[[i]]))
+  df_list2[[i]] <- cbind.data.frame(Sample=samples[i], het=(df_list[[i]][2]/sum(df_list[[i]]))*3.02)
 }
 
 het_df <- do.call(rbind,df_list2)
 head(het_df)
 
 #save the values in metadata
-g <- ggplot(metadata, aes(Site, `Heterozygosity (ANGSD)`, fill=Site))
-g <- g+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ 
+p <- ggplot(metadata, aes(Site, `Heterozygosity (ANGSD)`, fill=Site))
+p <- p+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ 
   facet_grid(.~Type, space="free", scales="free_x") + 
   theme_classic() + ylab("Heterozygosity (bp-1)")+
-  theme(legend.position = "none") + scale_fill_manual(values=colors)
-g
+  theme(legend.position = "none") + scale_fill_manual(values=colors) + ggtitle("All dataset")
+p
 
 pdf("Plots/Heterozygosity_angsd.pdf", height=4, width=11)
-g
+p
 dev.off()
 
 
@@ -63,27 +84,60 @@ summary(lm(metadata$Coverage~metadata$`Heterozygosity (ANGSD)`))
 
 g <- ggplot(metadata, aes(Coverage, `Heterozygosity (ANGSD)`))
 g <- g+ geom_point() + geom_smooth(method = "lm")+ ylab("Heterozygosity (bp-1)")+
-  theme_classic() + scale_color_manual(values=colors)
+  theme_classic() + scale_color_manual(values=colors)  + ggtitle("All dataset")
 g
 
 pdf("Plots/Heterozygosity_angsd_coverage.pdf", height=4, width=6)
 g
 dev.off()
 
+# Downsampling the highest heterozygosity samples to 5x and keep only samples with at least 5x
+colors2 = c("#645244","#832232","grey","#70a37f","#b3dec1","#fbefa6","#6d466b",
+           "#508991","#0a4a33","grey")
+
+p2 <- ggplot(metadata[metadata$Coverage>5,], aes(Site, `Heterozygosity (Downsampled to 5x)`, fill=Site))
+p2 <- p2+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ 
+  facet_grid(.~Type, space="free", scales="free_x") + 
+  theme_classic() + ylab("Heterozygosity (bp-1)")+  ggtitle("Downsampled to 5x")+
+  theme(legend.position = "none") + scale_fill_manual(values=colors2)
+p2
+
+pdf("Plots/Heterozygosity_angsd_5x.pdf", height=4, width=11)
+p2
+dev.off()
+
+cor.test(metadata[metadata$Coverage>5,]$`Coverage Subset ~5x (downsampled)`,metadata[metadata$Coverage>5,]$`Heterozygosity (Downsampled to 5x)`)
+summary(lm(metadata[metadata$Coverage>5,]$`Coverage Subset ~5x (downsampled)`~metadata[metadata$Coverage>5,]$`Heterozygosity (Downsampled to 5x)`))
+g1 <- ggplot(metadata[metadata$Coverage>5,], aes(`Coverage Subset ~5x (downsampled)`, `Heterozygosity (Downsampled to 5x)`))
+g1 <- g1+ geom_point() + geom_smooth(method = "lm")+ ylab("Heterozygosity (bp-1)")+ xlab("Coverage Subset (Downsampled)")+
+  theme_classic() + scale_color_manual(values=colors) + ggtitle("Downsampled to 5x")
+g1
+
+pdf("Plots/Heterozygosity_angsd_coverage_5x.pdf", height=4, width=6)
+g
+dev.off()
+
+ggarrange(g, g1, labels = c("A", "B"), ncol=1)
+ggsave("Plots/Coverage_het.pdf", height = 9, width = 9) 
+
+ggarrange(p, p2, labels = c("A", "B"), ncol=1)
+ggsave("Plots/Heterozygosity_angsd_site_both.pdf", height = 9, width = 11) 
+
+
 ctt <- metadata
 test <- t.test(ctt[ctt$Type=="Historical",]$`Heterozygosity (ANGSD)`, 
                ctt[ctt$Type=="Modern",]$`Heterozygosity (ANGSD)`)
 test$p.value
 
-g <- ggplot(ctt, aes(Type, `Heterozygosity (ANGSD)`, fill=Type))
-g <- g+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ 
-  stat_compare_means(label.x = 1.5, label.y = 0.0014)+
+gt <- ggplot(ctt, aes(Type, `Heterozygosity (ANGSD)`, fill=Type))
+gt <- gt+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ 
+  stat_compare_means(label.x = 1.5, label.y = 0.00084)+
   theme_classic() + xlab("") + ylab("Heterozygosity (bp-1)") + 
   scale_fill_manual(values=c("#913C5C","#FEDFFF"))
-g
+gt
 
 pdf("Plots/Heterozygosity_testHistModern.pdf", height=4, width=7)
-g
+gt
 dev.off()
 
 groups <- c("Southwest", "Greater Northeast")
@@ -97,7 +151,7 @@ mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Historical"&ctt$`Group
 
 g11 <- ggplot(ctt[which(ctt$`Grouping (2 Regions)`%in%groups),], aes(Type, `Heterozygosity (ANGSD)`, fill=Type))
 g11 <- g11+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ facet_grid(.~`Grouping (2 Regions)`)+
-  stat_compare_means(label.x = 1.5, label.y = 0.0014)+
+  stat_compare_means(label.x = 1.5, label.y = 0.0009)+
   theme_classic() + xlab("") + ylab("Heterozygosity (bp-1)")+
   scale_fill_manual(values=c("#913C5C","#FEDFFF"))
 
@@ -107,17 +161,49 @@ pdf("Plots/Heterozygosity_testHistModern_group.pdf", height=4, width=7)
 g11
 dev.off()
 
+#Downsampled to 5x and only >5x coverage
+ctt <- metadata[metadata$Coverage>5,]
+test <- t.test(ctt[ctt$Type=="Historical",]$`Heterozygosity (Downsampled to 5x)`, 
+               ctt[ctt$Type=="Modern",]$`Heterozygosity (Downsampled to 5x)`)
+test$p.value
 
-g <- ggplot(ctt[which(ctt$`Grouping (2 Regions)`%in%groups & ctt$Coverage > 7),], aes(Type, `Heterozygosity (ANGSD)`, fill=Type))
-g <- g+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ facet_grid(.~`Grouping (2 Regions)`)+
-  stat_compare_means(label.x = 1.5, label.y = 0.0014)+
+g <- ggplot(ctt, aes(Type, `Heterozygosity (Downsampled to 5x)`, fill=Type))
+g <- g+ geom_boxplot(outlier.shape = NA) + geom_jitter(height = 0)+ 
+  stat_compare_means(label.x = 1.5, label.y = 0.0006)+
+  theme_classic() + xlab("") + ylab("Heterozygosity (bp-1)") + 
+  scale_fill_manual(values=c("#913C5C","#FEDFFF"))
+g
+
+pdf("Plots/Heterozygosity_testHistModern_5x.pdf", height=4, width=7)
+g
+dev.off()
+
+groups <- c("Southwest", "Greater Northeast")
+mean(ctt[which(ctt$`Grouping (2 Regions)`%in%groups&ctt$Type=="Historical"),]$`Heterozygosity (Downsampled to 5x)`)/
+  mean(ctt[which(ctt$`Grouping (2 Regions)`%in%groups&ctt$Type=="Modern"),]$`Heterozygosity (Downsampled to 5x)`)
+
+mean(ctt[ctt$Type=="Historical",]$`Heterozygosity (Downsampled to 5x)`)/mean(ctt[ctt$Type=="Modern",]$`Heterozygosity (Downsampled to 5x)`)
+
+mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Historical"&ctt$`Grouping (2 Regions)`=="Greater Northeast",]$`Heterozygosity (Downsampled to 5x)`)/mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Modern"&ctt$`Grouping (2 Regions)`=="Greater Northeast",]$`Heterozygosity (Downsampled to 5x)`)
+mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Historical"&ctt$`Grouping (2 Regions)`=="Southwest",]$`Heterozygosity (Downsampled to 5x)`)/mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Modern"&ctt$`Grouping (2 Regions)`=="Southwest",]$`Heterozygosity (Downsampled to 5x)`)
+
+mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Historical"&ctt$`Grouping (2 Regions)`=="Greater Northeast",]$`Heterozygosity (Downsampled to 5x)`)
+mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Modern"&ctt$`Grouping (2 Regions)`=="Greater Northeast",]$`Heterozygosity (Downsampled to 5x)`)
+
+mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Historical"&ctt$`Grouping (2 Regions)`=="Southwest",]$`Heterozygosity (Downsampled to 5x)`)
+mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Modern"&ctt$`Grouping (2 Regions)`=="Southwest",]$`Heterozygosity (Downsampled to 5x)`)
+
+
+g11 <- ggplot(ctt[which(ctt$`Grouping (2 Regions)`%in%groups),], aes(Type, `Heterozygosity (ANGSD)`, fill=Type))
+g11 <- g11+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ facet_grid(.~`Grouping (2 Regions)`)+
+  stat_compare_means(label.x = 1.5, label.y = 0.0009)+
   theme_classic() + xlab("") + ylab("Heterozygosity (bp-1)")+
   scale_fill_manual(values=c("#913C5C","#FEDFFF"))
 
-g
+g11
 
-pdf("Plots/Heterozygosity_testHistModern_highcov.pdf", height=4, width=7)
-g
+pdf("Plots/Heterozygosity_testHistModern_group_5x.pdf", height=4, width=7)
+g11
 dev.off()
 
 # RUNS OF HOMOGYZOSITY form ROHan -------
@@ -127,8 +213,10 @@ metadata_7x <- metadata[which(metadata$Full_ID%in%samples),]
 
 # ROHan summary length RoHs -----
 roh <- list.files("Files/Het/rohan/", pattern = "_aDNA_2e5_allscaffolds_1Mb.mid.hmmrohl", full.names = TRUE)
+
 ldf_het <- lapply(roh, read.table)
-V1 <- gsub("_aDNA_2e5_allscaffolds_1Mb.mid.hmmrohl","", basename(roh)) # This one
+V1 <- gsub("_aDNA_2e5_allscaffolds_1Mb.mid.hmmrohl","", basename(roh)) 
+
 finalV1 <- V1
 
 for (i in 1:length(finalV1)){
@@ -143,11 +231,11 @@ colnames(assembly) <- c("Scaffold","Length","Pos","V4","V5")
 
 roh_final <- merge(df_roh, assembly[,c("Scaffold","Length"),], by="Scaffold")
 roh_final_rohan <- roh_final
-
+##
 # per sample  -----
 list_roh<- list()
-for (i in 1:length(finalV1)){  
-  sample <- as.character(finalV1[i])
+for (i in 1:length(samples)){  
+  sample <- as.character(samples[i])
   df <- roh_final_rohan[roh_final_rohan$Sample==sample,]
   p1 <- ggplot(df)
   p1 <- p1 + facet_wrap(.~Scaffold, ncol=1,strip.position="right")+ ggtitle(sample) + 
@@ -169,18 +257,16 @@ for (i in 1:length(finalV1)){
   print(p1)
   list_roh[[i]] <- p1
 }
-
-
-list_roh_plot <- c(list_roh[4],list_roh[6],list_roh[7:13])
-
-ggarrange(plotlist=list_roh_plot, labels = c("A", "B", "C","D","E", "F","G","H","I"))
+ggarrange(plotlist=list_roh, labels = c("A", "B", "C","D","E", "F","G","H","I"))
 ggsave("Plots/RoH_final_rohan.pdf", height = 15, width = 13) 
 
 # Age of fragments ------
 roh_final_rohan$Full_ID <- roh_final_rohan$Sample
 roh_final_rohan_metadata <- merge(roh_final_rohan, metadata, by="Full_ID")
-roh_final_rohan_metadata$Age <- 100/(2*(roh_final_rohan_metadata$ROH_LENGTH/1000000))*6
+roh_final_rohan_metadata$Age <- (100/(2*(roh_final_rohan_metadata$ROH_LENGTH/1000000)))*6
 roh_final_rohan_metadata$Year <- 2020-roh_final_rohan_metadata$Age
+roh_final_rohan_metadata[roh_final_rohan_metadata$Sample=="24_FMNH_69286",]$Year <- roh_final_rohan_metadata[roh_final_rohan_metadata$Sample=="24_FMNH_69286",]$Year - 71
+roh_final_rohan_metadata[roh_final_rohan_metadata$Sample=="41_FMNH_69938",]$Year <- roh_final_rohan_metadata[roh_final_rohan_metadata$Sample=="41_FMNH_69938",]$Year - 70
 
 roh_final_rohan_metadata <- roh_final_rohan_metadata[roh_final_rohan_metadata$Coverage > 7,] 
 
@@ -190,22 +276,37 @@ mean(roh_final_rohan_metadata[roh_final_rohan_metadata$Full_ID=="CEI_051",]$Age)
 min(roh_final_rohan_metadata[roh_final_rohan_metadata$Full_ID=="CEI_051",]$Age)
 
 median(roh_final_rohan_metadata[roh_final_rohan_metadata$Full_ID=="CEI_051",]$Age)
+median(roh_final_rohan_metadata[roh_final_rohan_metadata$Full_ID=="SJN_001",]$Age)
 mean(roh_final_rohan_metadata[roh_final_rohan_metadata$Full_ID=="CEI_051",]$ROH_LENGTH)/1000000
 
 
-# summary ROH ------
-samples_new <- read.table("Files/Samples", header = FALSE)
+age <- lapply(1:length(samples), function(i) {
+  df2 <- roh_final_rohan_metadata[roh_final_rohan_metadata$Full_ID == samples[i]&roh_final_rohan_metadata$ROH_LENGTH>=1000000,]
+  data.frame(sample=samples[i],
+             AverageAge=mean(df2$Age),
+             AverageGenerations=mean(df2$Age)/6,
+             MedianAge=median(df2$Age),
+             MedianGenerations=median(df2$Age)/6,
+             minAge=min(df2$Age),
+             minGenerations=median(df2$Age)/6)})
 
-roh_perc_bcftools <- lapply(1:length(samples_new$V1), function(i) {
-  df2 <- roh_final_rohan[roh_final_rohan$Sample == samples_new$V1[i],]
-  data.frame(sample=samples_new$V1[i],
+age_df <- do.call(rbind, age) # save this in Supplementary Table S6
+
+
+
+# summary ROH ------
+
+roh_perc_bcftools <- lapply(1:length(samples), function(i) {
+  df2 <- roh_final_rohan[roh_final_rohan$Sample == samples[i],]
+  data.frame(sample=samples[i],
              Total=sum(df2$ROH_LENGTH)/2779462738,  
              Average=mean(df2$ROH_LENGTH),
+             Average2=mean(df2[df$ROH_LENGTH>=1000000,]$ROH_LENGTH),
              Median=median(df2$ROH_LENGTH),
              Intermediate=sum(df2[df2$ROH_LENGTH>=1000000 & df2$ROH_LENGTH<2500000,]$ROH_LENGTH)/2779462738, 
              Intermediate2=sum(df2[df2$ROH_LENGTH>=2500000 & df2$ROH_LENGTH<5000000,]$ROH_LENGTH)/2779462738, 
-             Long=sum(df2[df2$ROH_LENGTH>=5000000 & df2$ROH_LENGTH<8000000,]$ROH_LENGTH)/2779462738, 
-             ExtraLong=sum(df2[df2$ROH_LENGTH>=8000000,]$ROH_LENGTH)/2779462738, 
+             Long=sum(df2[df2$ROH_LENGTH>=5000000 & df2$ROH_LENGTH<10000000,]$ROH_LENGTH)/2779462738, 
+             ExtraLong=sum(df2[df2$ROH_LENGTH>=10000000,]$ROH_LENGTH)/2779462738, 
              count=length(df2$ROH_LENGTH),
              sumMb=sum(df2$ROH_LENGTH),
              maxMb=max(df2$ROH_LENGTH))
@@ -215,9 +316,9 @@ roh_perc_df_bcftools <- do.call(rbind, roh_perc_bcftools)
 roh_perc_df_gather <- gather(roh_perc_df_bcftools, key, value, -sample, -Median,-Average, -count,-sumMb,-maxMb)
 roh_perc_df_gather$key <- gsub("Intermediate2","1-2.5Mb", roh_perc_df_gather$key )
 roh_perc_df_gather$key <- gsub("Intermediate","2.5-5Mb", roh_perc_df_gather$key )
-roh_perc_df_gather$key <- gsub("ExtraLong",">8Mb", roh_perc_df_gather$key )
-roh_perc_df_gather$key <- gsub("Long","5-8Mb", roh_perc_df_gather$key )
-order <- c("Total", "1-2.5Mb","2.5-5Mb", "5-8Mb",">8Mb")
+roh_perc_df_gather$key <- gsub("ExtraLong",">10Mb", roh_perc_df_gather$key )
+roh_perc_df_gather$key <- gsub("Long","5-10Mb", roh_perc_df_gather$key )
+order <- c("Total", "1-2.5Mb","2.5-5Mb", "5-10Mb",">10Mb")
 
 roh_perc_df_gather$key <- factor(roh_perc_df_gather$key, levels = order, ordered = TRUE)
 roh_perc_df_gather$Full_ID <- roh_perc_df_gather$sample
