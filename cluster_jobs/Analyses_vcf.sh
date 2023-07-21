@@ -140,7 +140,7 @@ done </home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples
 java -Xmx8g -jar /projects/mjolnir1/apps/snpeff-5.1d/snpEff.jar -c snpEff.config -v SaguinusMidas_NCBI rename.vcf.gz > CTT_allsamples.ann.vcf
 vcftools --vcf CTT_allsamples.ann.vcf --keep samples.list --maf 0.0001 --recode --recode-INFO-all --stdout | bgzip -c > CTT_oedipusSamples.ann.vcf.gz
 vcftools --gzvcf CTT_oedipusSamples.ann.vcf.gz --keep Samples_5x --max-missing 1 --maf 0.0000001 --stdout --recode --recode-INFO-all | bgzip -c > CTT_5x.ann.vcf.gz;
-./GeneticLoad/counts_load_dp5.sh
+./GeneticLoad/counts_load_dp5_gq30.sh
 
 # Distribution of read depth and genotype quality per sample 
 while read line;
