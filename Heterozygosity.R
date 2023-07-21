@@ -8,13 +8,13 @@ library("readxl")
 library("ggpubr")
 
 setwd("~/Documents/OneDrive - University of Copenhagen/CottonTop_Tamarins/")
-metadata <- read_excel("Paper/SupplementaryTables_v1.1.xlsx", sheet = 4)
+metadata <- read_excel("Paper/RevisionMolEcol/SupplementaryTables_v2.xlsx", sheet = 4)
 
 metadata <- metadata[-which(metadata$Full_ID=="CEI_060"),]
 
 colors = c("#645244","#832232","grey","#70a37f","#b3dec1","#fbefa6","#fab2ea","#6d466b",
            "#508991","#0a4a33", "#eb9486","grey")
-
+#####
 # F INBREEDING NGSRELATE -----
 ## whole dataset
 g <- ggplot(metadata, aes(Site, `Fi (NGSrelate)`, fill=Site))
@@ -49,10 +49,12 @@ ggsave("Plots/Inbreeding_F_all.pdf", height = 8, width = 11)
 
 
 # HETEROZYGOSITY from ANGSD -----
-fins <- list.files("Files/Het/angsd_trans_win/",pattern=".ml",full.names=TRUE)
-samples <- sub('\\.ml$', '', basename(fins))
+fins <- list.files("Files/Het/angsd_rmTrans_win_R/",pattern=".ml",full.names=TRUE)
+fins <- list.files("Files/Het/angsd_rmTrans_down_win_R/",pattern=".ml",full.names=TRUE) # Down to 5x
 
-fold <- 0 # Folded caculation, since we use the same ref and anc.
+samples <- sub('\\_filter_win.ml$', '', basename(fins))
+samples <- sub('\\_filter_win_down.ml$', '', basename(fins))
+
 df_list <- lapply(fins,
                   FUN = function(files) {
                     scan(files)
@@ -65,6 +67,7 @@ for (i in 1:length(samples)){
 
 het_df <- do.call(rbind,df_list2)
 head(het_df)
+########################
 
 #save the values in metadata
 p <- ggplot(metadata, aes(Site, `Heterozygosity (ANGSD)`, fill=Site))
@@ -77,7 +80,6 @@ p
 pdf("Plots/Heterozygosity_angsd.pdf", height=4, width=11)
 p
 dev.off()
-
 
 cor.test(metadata$Coverage,metadata$`Heterozygosity (ANGSD)`)
 summary(lm(metadata$Coverage~metadata$`Heterozygosity (ANGSD)`))
@@ -108,6 +110,7 @@ dev.off()
 
 cor.test(metadata[metadata$Coverage>5,]$`Coverage Subset ~5x (downsampled)`,metadata[metadata$Coverage>5,]$`Heterozygosity (Downsampled to 5x)`)
 summary(lm(metadata[metadata$Coverage>5,]$`Coverage Subset ~5x (downsampled)`~metadata[metadata$Coverage>5,]$`Heterozygosity (Downsampled to 5x)`))
+
 g1 <- ggplot(metadata[metadata$Coverage>5,], aes(`Coverage Subset ~5x (downsampled)`, `Heterozygosity (Downsampled to 5x)`))
 g1 <- g1+ geom_point() + geom_smooth(method = "lm")+ ylab("Heterozygosity (bp-1)")+ xlab("Coverage Subset (Downsampled)")+
   theme_classic() + scale_color_manual(values=colors) + ggtitle("Downsampled to 5x")
@@ -169,7 +172,7 @@ test$p.value
 
 g <- ggplot(ctt, aes(Type, `Heterozygosity (Downsampled to 5x)`, fill=Type))
 g <- g+ geom_boxplot(outlier.shape = NA) + geom_jitter(height = 0)+ 
-  stat_compare_means(label.x = 1.5, label.y = 0.0006)+
+  stat_compare_means(label.x = 1.5, label.y = 0.00072)+
   theme_classic() + xlab("") + ylab("Heterozygosity (bp-1)") + 
   scale_fill_manual(values=c("#913C5C","#FEDFFF"))
 g
@@ -179,6 +182,8 @@ g
 dev.off()
 
 groups <- c("Southwest", "Greater Northeast")
+
+# this ones for the paper
 mean(ctt[which(ctt$`Grouping (2 Regions)`%in%groups&ctt$Type=="Historical"),]$`Heterozygosity (Downsampled to 5x)`)/
   mean(ctt[which(ctt$`Grouping (2 Regions)`%in%groups&ctt$Type=="Modern"),]$`Heterozygosity (Downsampled to 5x)`)
 
@@ -194,9 +199,9 @@ mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Historical"&ctt$`Group
 mean(ctt[ctt$`Grouping (2 Regions)`!="Unknown"&ctt$Type=="Modern"&ctt$`Grouping (2 Regions)`=="Southwest",]$`Heterozygosity (Downsampled to 5x)`)
 
 
-g11 <- ggplot(ctt[which(ctt$`Grouping (2 Regions)`%in%groups),], aes(Type, `Heterozygosity (ANGSD)`, fill=Type))
+g11 <- ggplot(ctt[which(ctt$`Grouping (2 Regions)`%in%groups),], aes(Type, `Heterozygosity (Downsampled to 5x)`, fill=Type))
 g11 <- g11+ geom_boxplot(outlier.shape = NA) + geom_jitter()+ facet_grid(.~`Grouping (2 Regions)`)+
-  stat_compare_means(label.x = 1.5, label.y = 0.0009)+
+  stat_compare_means(label.x = 1.5, label.y = 0.00072)+
   theme_classic() + xlab("") + ylab("Heterozygosity (bp-1)")+
   scale_fill_manual(values=c("#913C5C","#FEDFFF"))
 
@@ -301,7 +306,7 @@ roh_perc_bcftools <- lapply(1:length(samples), function(i) {
   data.frame(sample=samples[i],
              Total=sum(df2$ROH_LENGTH)/2779462738,  
              Average=mean(df2$ROH_LENGTH),
-             Average2=mean(df2[df$ROH_LENGTH>=1000000,]$ROH_LENGTH),
+             Average2=mean(df2[df2$ROH_LENGTH>=1000000,]$ROH_LENGTH),
              Median=median(df2$ROH_LENGTH),
              Intermediate=sum(df2[df2$ROH_LENGTH>=1000000 & df2$ROH_LENGTH<2500000,]$ROH_LENGTH)/2779462738, 
              Intermediate2=sum(df2[df2$ROH_LENGTH>=2500000 & df2$ROH_LENGTH<5000000,]$ROH_LENGTH)/2779462738, 
@@ -309,7 +314,8 @@ roh_perc_bcftools <- lapply(1:length(samples), function(i) {
              ExtraLong=sum(df2[df2$ROH_LENGTH>=10000000,]$ROH_LENGTH)/2779462738, 
              count=length(df2$ROH_LENGTH),
              sumMb=sum(df2$ROH_LENGTH),
-             maxMb=max(df2$ROH_LENGTH))
+             maxMb=max(df2$ROH_LENGTH)
+            )
 })
 roh_perc_df_bcftools <- do.call(rbind, roh_perc_bcftools)
 
@@ -347,4 +353,4 @@ dev.off()
 
 # Final plot for figure 3
 ggarrange(g11,pa,nrow = 2, align = "v",labels=c("A","B"))
-ggsave("Plots/Figure3.pdf", height = 8, width = 8)
+ggsave("Plots/Figure3_R.pdf", height = 8, width = 8)
