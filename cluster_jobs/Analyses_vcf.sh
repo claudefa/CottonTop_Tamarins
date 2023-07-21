@@ -133,7 +133,6 @@ do
         sbatch -c 1 --mem-per-cpu 1G --time 2:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/VCF/AB/out/AB_${sample}.log --job-name ab_${sample} -- $jobName
 done </home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples
 
-
 # ROHs with RoHan
 ./rohan.sh
 
@@ -142,3 +141,21 @@ java -Xmx8g -jar /projects/mjolnir1/apps/snpeff-5.1d/snpEff.jar -c snpEff.config
 vcftools --vcf CTT_allsamples.ann.vcf --keep samples.list --maf 0.0001 --recode --recode-INFO-all --stdout | bgzip -c > CTT_oedipusSamples.ann.vcf.gz
 vcftools --gzvcf CTT_oedipusSamples.ann.vcf.gz --keep Samples_5x --max-missing 1 --maf 0.0000001 --stdout --recode --recode-INFO-all | bgzip -c > CTT_5x.ann.vcf.gz;
 ./GeneticLoad/counts_load_dp5.sh
+
+# Distribution of read depth and genotype quality per sample 
+while read line;
+do
+        sample=$(echo $line | awk '{print $1}')
+        jobName=/projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/out/${sample}.quality.sh
+        echo '#!/bin/bash' > $jobName
+        echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/CTT_5x.ann.vcf.gz --indv $sample --minDP 5 --maxDP 50 --minGQ 30 --stdout --recode --recode-INFO-all | grep -v \"#\" |  grep HIGH | awk '{print \$10}' | cut -d':' -f1,2,8 | tr '[,]' '[\t]'  > /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/DP_GQ_${sample}_HIGH_v2.txt" >>  $jobName
+        chmod 755 $jobName
+        sbatch -c 1 --mem-per-cpu 1G --time 8:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/out/DP_GQ_${sample}_high.log --job-name gq_${sample} -- $jobName
+        echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/CTT_5x.ann.vcf.gz --indv $sample --minDP 5 --maxDP 50 --minGQ 30 --stdout --recode --recode-INFO-all | grep -v \"#\" |  grep MODERATE | awk '{print \$10}' | cut -d':' -f1,2,8 | tr '[,]' '[\t]'  > /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/DP_GQ_${sample}_MODERATE_v2.txt" >>  $jobName
+        chmod 755 $jobName
+        sbatch -c 1 --mem-per-cpu 1G --time 8:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/out/DP_GQ_${sample}_moderate.log --job-name gq_${sample} -- $jobName
+        echo "vcftools --gzvcf /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/CTT_5x.ann.vcf.gz --indv $sample --minDP 5 --maxDP 50 --minGQ 30 --stdout --recode --recode-INFO-all | grep -v \"#\" |  grep synonymous_variant | awk '{print \$10}' | cut -d':' -f1,2,8 | tr '[,]' '[\t]'  > /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/DP_GQ_${sample}_SYNONYM_v2.txt" >>  $jobName
+        chmod 755 $jobName
+        sbatch -c 1 --mem-per-cpu 1G --time 8:00:00 -o /projects/mjolnir1/people/qvw641/CottonTop/GeneticLoad/out/DP_GQ_${sample}_synonym_v2.log --job-name gq_${sample} -- $jobName
+done < /home/qvw641/CottonTop_Tamarins/cluster_jobs/Samples_5x
+

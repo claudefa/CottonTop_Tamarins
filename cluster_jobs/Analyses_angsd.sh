@@ -32,69 +32,131 @@ sbatch -c 1 --mem-per-cpu 2G --time 7:00:00 -o ${dir}/out/NGSrelate_onlyCTT_rel_
 
 # Heterozygosity
 # Calculate heterozygosity from SFS
-module load angsd/0.939
-dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het/
-echo '#!/bin/bash' > $jobName
-while read sample;
-do
-	name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
-	grep $name Samples_Bams > ${dir}${name}.tmp
-	jobName=$dir/out/${name}.sh
-	echo '#!/bin/bash' > $jobName
-	echo  "angsd  -b ${dir}${name}.tmp -ref /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta \
-       		-rf /home/qvw641/CottonTop_Tamarins/cluster_jobs/Chrom_autosomes_angsd \
-		-anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}${name} \
-                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -noTrans 1 -trim 0 -C 50 -baq 1 \
-                -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1 \
-                -GL 1 -doSaf 1" >> $jobName
-	chmod +x $jobName
-	sbatch -c 1 --mem-per-cpu 10G --time 48:00:00 -o ${dir}/out/Het_${name}.log --job-name ha_${name} -- $jobName
+# first pre-run ANGSD with rmTrans 1 to extract the positions
 
-done <  Samples_Bams_onlyCTT
-
-#with winSFS
-module load winsfs/0.7.0
-dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het/
-jobName=$dir/out/winsfs.sh
+module load angsd/0.940
+dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het_revision/
 echo '#!/bin/bash' > $jobName
 while read sample;
 do
         name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
-        echo "winsfs ${dir}${name}.saf.idx > ${dir}${name}_win3.ml" >> $jobName
-done <  Samples_Bams_onlyCTT
-
-cat $jobName | sbatch -c 1 --array=1 --mem-per-cpu 600G --time 8:00:00 -o ${dir}/out/winSFS_%A_%a.log --job-name winsfsT -- $jobName
-
-# Calculate heterozygosity from SFS but with high coverage bam files downsampled to 5x
-module load angsd/0.939
-dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het/
-jobName=$dir/out/down_tv.sh
-echo '#!/bin/bash' > $jobName
-while read sample;
-do
-        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
-        grep $name Samples_Bams_onlyCTT_down5x > ${dir}${name}.tmp
+        grep $name Samples_Bams > ${dir}${name}.tmp
+        jobName=$dir/out/${name}.sh
+        echo '#!/bin/bash' > $jobName
         echo  "angsd  -b ${dir}${name}.tmp -ref /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta \
                 -rf /home/qvw641/CottonTop_Tamarins/cluster_jobs/Chrom_autosomes_angsd \
-                -anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}Down/${name}_down_TV \
-                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -noTrans 1 -trim 0 -C 50 -baq 1 \
-                -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1 \
-                -GL 1 -doSaf 1" >> $jobName
-done <  Samples_Bams_onlyCTT_down5x
+                -anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}${name}_rmtrans \
+                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -rmTrans 1 -trim 0 -C 50 -baq 1 \
+                -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1 -doMajorMinor 1  \
+                -GL 2 -doGlf 2 -doMaf 2" >> $jobName
+        chmod +x $jobName
+        sbatch -c 1 --mem-per-cpu 10G --time 24:00:00 -o ${dir}/out/Het_${name}_2.log --job-name ha_${name} -- $jobName
 
-cat $jobName | sbatch -c 1 --array=1-34%10 --mem-per-cpu 50G --time 80:00:00 -o ${dir}/out/Het_downTV_%A_%a.log --job-name ha_down_TV --
+done < Samples_Bams_onlyCTT
 
-#with WinSFS
-dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het/
-jobName=$dir/out/down_tv_winsfs.sh
-echo '#!/bin/bash' > $jobName
 while read sample;
 do
         name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
-        echo "winsfs ${dir}Down/${name}_down_TV.saf.idx > ${dir}Down/${name}_win.ml" >> $jobName
-done <  Samples_Bams_onlyCTT_down5x
+        jobName=$dir/out/${name}_listpos.sh
+        echo '#!/bin/bash' > $jobName
+        echo "zcat ${dir}${name}_rmtrans.mafs.gz  | awk '{print \$1 , \$2}' | sed 1d > ${dir}${name}_rmtrans.list" >> $jobName
+        echo "angsd sites index ${dir}${name}_rmtrans.list" >> $jobName
+        chmod +x $jobName
+        sbatch -c 1 --mem-per-cpu 1G --time 5:00:00 -o ${dir}/out/ExtractIndex_${name}.log --job-name ex_${name} -- $jobName
+done  < Samples_Bams_onlyCTT
 
-cat $jobName | sbatch -c 1 --array=1-34%10 --mem-per-cpu 1G --time 24:00:00 -o ${dir}/out/N2HetwinSFS_%A_%a.log --job-name winsfs -- $jobName
+# run angsd only on those previously selected positions
+while read sample;
+do
+        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
+        grep $name Samples_Bams > ${dir}${name}.tmp
+        jobName=$dir/out/${name}.sh
+        echo '#!/bin/bash' > $jobName
+        echo  "angsd  -b ${dir}${name}.tmp -ref /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta \
+                -sites ${dir}${name}_rmtrans.list \
+                -anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}${name}_filtList \
+                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -noTrans 1 -C 50 -baq 1 \
+                -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1  -nThreads 10 \
+                -GL 1 -doSaf 1" >> $jobName
+        chmod +x $jobName
+        sbatch -c 10 --mem-per-cpu 40G --time 20:00:00 -o ${dir}/out/FinalSAF_${name}.log --job-name ha_${name} -- $jobName
+
+done <  Samples_Bams_onlyCTT
+#with winSFS
+module load winsfs/0.7.0
+dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het_revision/
+while read sample;
+do
+        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
+        jobName=$dir/out/winsfs_${name}.sh
+        echo '#!/bin/bash' > $jobName
+        echo "winsfs ${dir}${name}_filtList.saf.idx > ${dir}${name}_filter_win.ml" >> $jobName
+        chmod +x $jobName
+        sbatch -c 1 --mem-per-cpu 600G --time 8:00:00 -o ${dir}/out/winSFS_${name}_%A_%a.log --job-name winsfsT -- $jobName
+done <  Samples_Bams_onlyCTT
+
+# Calculate heterozygosity from SFS but with high coverage bam files downsampled to 5x
+# first pre-run ANGSD rmTrans 1 to extract the positions
+
+module load angsd/0.940
+dir=/projects/mjolnir1/people/qvw641/CottonTop/ANGSD/Het_revision/Down/
+while read sample;
+do
+        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
+        grep $name Samples_Bams_onlyCTT_down5x_only > ${dir}${name}.tmp
+        jobName=$dir/out/${name}.sh
+        echo '#!/bin/bash' > $jobName
+        echo  "angsd  -b ${dir}${name}.tmp -ref /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta \
+                -rf /home/qvw641/CottonTop_Tamarins/cluster_jobs/Chrom_autosomes_angsd \
+                -anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}${name}_rmtrans_down \
+                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -rmTrans 1 -trim 0 -C 50 -baq 1 \
+                -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1 -doMajorMinor 1  \
+                -GL 2 -doGlf 2 -doMaf 2 -nThreads 4" >> $jobName
+        chmod +x $jobName
+        sbatch -c 4 --mem-per-cpu 10G --time 5:00:00 -o ${dir}/out/Het_${name}_down.log --job-name down_${name} -- $jobName
+
+done < Samples_Bams_onlyCTT_down5x_only
+
+while read sample;
+do
+        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
+        jobName=$dir/out/${name}_listpos.sh
+        echo '#!/bin/bash' > $jobName
+        echo "zcat ${dir}${name}_rmtrans_down.mafs.gz  | awk '{print \$1 , \$2}' | sed 1d > ${dir}${name}_rmtrans_down.list" >> $jobName
+        echo "angsd sites index ${dir}${name}_rmtrans_down.list" >> $jobName
+        chmod +x $jobName
+        sbatch -c 1  --mem-per-cpu 1G --time 5:00:00 -o ${dir}/out/ExtractIndex_${name}.log --job-name ex_${name} -- $jobName
+done  < Samples_Bams_onlyCTT_down5x_only_rep
+
+# run angsd only into those previously selected positions
+while read sample;
+do
+        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
+        grep $name Samples_Bams_onlyCTT_down5x_only > ${dir}${name}.tmp
+        jobName=$dir/out/${name}.sh
+        echo '#!/bin/bash' > $jobName
+        echo  "angsd  -b ${dir}${name}.tmp -ref /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta \
+                -sites ${dir}${name}_rmtrans_down.list \
+                -anc /projects/mjolnir1/people/vbz170/projects/CTT/Ref_Genome/Saguinus_midas_Full_Genome/NCBI_version/SaguinusMidas_NCBI.fasta  -out ${dir}${name}_filtList_down \
+                -uniqueOnly 1 -remove_bads 1 -only_proper_pairs 1 -trim 0 -noTrans 1 -C 50 -baq 1 \
+                -minMapQ 20 -minQ 20 -setMaxDepth 50 -doCounts 1  -nThreads 4 \
+                -GL 1 -doSaf 1" >> $jobName
+        chmod +x $jobName
+        sbatch -c 4 --mem-per-cpu 10G --time 5:00:00 -o ${dir}/out/FinalSAF_${name}.log --job-name ha_${name} -- $jobName
+
+done <  Samples_Bams_onlyCTT_down5x_only
+
+#with WinSFS
+module load winsfs/0.7.0
+while read sample;
+do
+        name=$(echo $sample | cut -d"/" -f 8 | cut -d"." -f1)
+        jobName=$dir/out/winsfs_${name}.sh
+        echo '#!/bin/bash' > $jobName
+        echo "winsfs ${dir}${name}_filtList_down.saf.idx > ${dir}${name}_filter_win_down.ml" >> $jobName
+        chmod +x $jobName
+        sbatch -c 1 --mem-per-cpu 600G --time 8:00:00 -o ${dir}/out/winSFS_${name}_down_%A_%a.log --job-name winsfsT -- $jobName
+done <  Samples_Bams_onlyCTT_down5x_only
 
 # Fst
 # see FST/fst.sh
